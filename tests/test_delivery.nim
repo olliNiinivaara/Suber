@@ -1,7 +1,7 @@
 # nim c -r --gc:orc --d:release test_delivery.nim
 
 from os import sleep
-import locks, ../suber
+import locks, ../src/suber
 
 const DeliveryCount = 100000
 const ThreadCount = 4
@@ -18,9 +18,9 @@ proc onBDeliver(messages: openArray[ptr SuberMessage[int, int]]) =
   {.gcsafe.}:
     for m in messages: bDeliveredmessages.incl(m.data)
 
-var a = initSuber[int, int](nil, onADeliver)
+var a = newSuber[int, int](onADeliver)
 
-var b = initSuber[int, int](nil, onBDeliver, 100, 20000, 10000, 50)
+var b = newSuber[int, int](onBDeliver, 100, 20000, 10000, 50)
 
 var lock: Lock
 
@@ -31,8 +31,8 @@ proc run(t: int) =
       i.inc
       if i mod 1000 == 0: a.doDelivery()
       let data = i+(t*DeliveryCount)
-      a.push(data, 1)
-      b.push(data, 1)
+      a.push(1, data)
+      b.push(1, data)
       withLock(lock): pushedmessages.incl(data)
 
 var threads: array[ThreadCount, Thread[int]]

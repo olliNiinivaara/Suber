@@ -1,7 +1,7 @@
 # nim c -r --gc:orc -d:release test_generic.nim
 
 import os, random, times, std/monotimes
-import ../suber
+import ../src/suber
 
 const TestDuration = initDuration(seconds = 10)
 
@@ -39,9 +39,9 @@ proc onADeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
 proc onBDeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
   bDeliveredmessages += messages.len
 
-var a = initSuber[string, MessageData](onAPush, onADeliver)
+var a = newSuber[string, MessageData](onAPush, onADeliver)
 
-var b = initSuber[string, MessageData](onBPush, onBDeliver, 1000, 20, 5, 10)
+var b = newSuber[string, MessageData](onBPush, onBDeliver, 1000, 20, 5, 10)
 
 var rounds = 0
 
@@ -98,8 +98,8 @@ proc removeSubscriber() =
   subscribers.del(r)
  
 proc push() =
-  a.push(MessageData(first: $rounds, second: $rounds), "topic")
-  b.push(MessageData(first: $rounds, second: $rounds), "topic")
+  a.push(MessageData("topic", first: $rounds, second: $rounds))
+  b.push(MessageData("topic", first: $rounds, second: $rounds))
   publishedmessages.inc
  
 proc run() =

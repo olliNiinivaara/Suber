@@ -55,8 +55,7 @@ function main() {
 </script>
 
 <style>
-
-/*
+  /*
 Stylesheet for use with Docutils/rst2html.
 
 See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
@@ -960,8 +959,6 @@ span.attachedType {
   display: none;
   visibility: hidden;
 }
-
-
 </style>
 
 </head>
@@ -997,7 +994,7 @@ span.attachedType {
     </select>
   </div>
   <ul class="simple simple-toc" id="toc-list">
-<li><a class="reference" id="a-complete-example_toc" href="#a-complete-example">A Complete Example</a></li>
+<li><a class="reference" id="example_toc" href="#example">Example</a></li>
 <li>
   <a class="reference reference-toplevel" href="#7" id="57">Types</a>
   <ul class="simple simple-toc-section">
@@ -1007,7 +1004,8 @@ span.attachedType {
     title="TData = concept s
     s.len is Ordinal">TData</a></li>
   <li><a class="reference" href="#PullCallback"
-    title="PullCallback[TTopic; TData] = proc (topicswithexpiredstates: openArray[TTopic];
+    title="PullCallback[TTopic; TData] = proc (subscriber: int;
+                                    topicswithexpiredstates: openArray[TTopic];
     messages: openArray[ptr SuberMessage[TTopic, TData]]) {.gcsafe, raises: [].}">PullCallback</a></li>
   <li><a class="reference" href="#SuberMessageKind"
     title="SuberMessageKind = enum
@@ -1098,21 +1096,26 @@ span.attachedType {
 
   </ul>
   <ul class="simple nested-toc-section">push
-      <li><a class="reference" href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTData%2CsinkTable%5BTTopic%2Cint%5D"
-    title="push[TTopic, TData](suber: var Suber[TTopic, TData]; data: sink TData;
-                    topics: sink Table[TTopic, int])">push,<wbr>Suber[TTopic,<wbr>TData],<wbr>sinkTData,<wbr>sinkTable[TTopic,<wbr>int]</a></li>
-  <li><a class="reference" href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTData%2Cvarargs%5BTTopic%5D"
-    title="push[TTopic, TData](suber: var Suber[TTopic, TData]; data: sink TData;
-                    topics: varargs[TTopic])">push,<wbr>Suber[TTopic,<wbr>TData],<wbr>sinkTData,<wbr>varargs[TTopic]</a></li>
+      <li><a class="reference" href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTable%5BTTopic%2Cint%5D%2CsinkTData"
+    title="push[TTopic, TData](suber: var Suber[TTopic, TData];
+                    topics: sink Table[TTopic, int]; data: sink TData)">push,<wbr>Suber[TTopic,<wbr>TData],<wbr>sinkTable[TTopic,<wbr>int],<wbr>sinkTData</a></li>
+  <li><a class="reference" href="#push%2CSuber%5BTTopic%2CTData%5D%2Cvarargs%5BTTopic%5D%2CsinkTData"
+    title="push[TTopic, TData](suber: var Suber[TTopic, TData]; topics: varargs[TTopic];
+                    data: sink TData)">push,<wbr>Suber[TTopic,<wbr>TData],<wbr>varargs[TTopic],<wbr>sinkTData</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">initSuber
-      <li><a class="reference" href="#initSuber%2CPushCallback%5BTTTopic%3A+TData%2CTTData%3A+TData%5D%2CDeliverCallback%5BTTTopic%3A+TData%2CTTData%3A+TData%5D%2Cint%2Cint%2Cint"
-    title="initSuber[TTTopic, TTData: TData](onPush: PushCallback[TTTopic, TTData];
-                                  onDeliver: DeliverCallback[TTTopic, TTData];
-                                  cachemaxcapacity = 10000000;
-                                  cachelength = 1000000; maxdeliverysize = -1;
-                                  channelsize = 200): Suber[TTTopic, TTData]">initSuber,<wbr>PushCallback[TTTopic: TData,<wbr>TTData: TData],<wbr>DeliverCallback[TTTopic: TData,<wbr>TTData: TData],<wbr>int,<wbr>int,<wbr>int</a></li>
+      <li><a class="reference" href="#initSuber%2CSuber%5BTTTopic%2CTTData%5D%2CPushCallback%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"
+    title="initSuber[TTTopic, TTData](suber: var Suber[TTTopic, TTData];
+                           onPush: PushCallback[TTTopic, TTData];
+                           onDeliver: DeliverCallback[TTTopic, TTData];
+                           cachemaxcapacity = 10000000; cachelength = 1000000;
+                           maxdeliverysize = -1; channelsize = 200)">initSuber,<wbr>Suber[TTTopic,<wbr>TTData],<wbr>PushCallback[TTTopic,<wbr>TTData],<wbr>DeliverCallback[TTTopic,<wbr>TTData],<wbr>int,<wbr>int,<wbr>int</a></li>
+  <li><a class="reference" href="#initSuber%2CSuber%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"
+    title="initSuber[TTTopic, TTData](suber: var Suber[TTTopic, TTData];
+                           onDeliver: DeliverCallback[TTTopic, TTData];
+                           cachemaxcapacity = 10000000; cachelength = 1000000;
+                           maxdeliverysize = -1; channelsize = 200)">initSuber,<wbr>Suber[TTTopic,<wbr>TTData],<wbr>DeliverCallback[TTTopic,<wbr>TTData],<wbr>int,<wbr>int,<wbr>int</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">hasTopic
@@ -1147,6 +1150,20 @@ span.attachedType {
   <ul class="simple nested-toc-section">stopSuber
       <li><a class="reference" href="#stopSuber%2CSuber"
     title="stopSuber(suber: var Suber)">stopSuber,<wbr>Suber</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">newSuber
+      <li><a class="reference" href="#newSuber%2CPushCallback%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"
+    title="newSuber[TTTopic, TTData](onPush: PushCallback[TTTopic, TTData];
+                          onDeliver: DeliverCallback[TTTopic, TTData];
+                          cachemaxcapacity = 10000000; cachelength = 1000000;
+                          maxdeliverysize = -1; channelsize = 200): Suber[
+    TTTopic, TTData]">newSuber,<wbr>PushCallback[TTTopic,<wbr>TTData],<wbr>DeliverCallback[TTTopic,<wbr>TTData],<wbr>int,<wbr>int,<wbr>int</a></li>
+  <li><a class="reference" href="#newSuber%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"
+    title="newSuber[TTTopic, TTData](onDeliver: DeliverCallback[TTTopic, TTData];
+                          cachemaxcapacity = 10000000; cachelength = 1000000;
+                          maxdeliverysize = -1; channelsize = 200): Suber[
+    TTTopic, TTData]">newSuber,<wbr>DeliverCallback[TTTopic,<wbr>TTData],<wbr>int,<wbr>int,<wbr>int</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">hasSubscriber
@@ -1201,9 +1218,72 @@ span.attachedType {
   <div id="tocRoot"></div>
   
   <p class="module-desc"><p>A Pub/Sub engine.</p>
-<p>Receives messages from multiple sources and forwards them as ordered serialized stream. Keeps a message cache so that subscribers can sync their state after a communication breakdown.</p>
+<p>Receives messages from multiple sources and delivers them as ordered serialized stream. Sources can be in different threads. Messages can belong to multiple topics. Subscribers can subscribe to multiple topics. Topics, subscribers and subscriptions can be modified anytime. Delivery triggered on message push, size of undelivered messages, amount of undelivered messages or on call. Keeps a message cache so that subscribers can sync their state at will.</p>
 
-<h1><a class="toc-backref" id="a-complete-example" href="#a-complete-example">A Complete Example</a></h1></p>
+<h1><a class="toc-backref" id="example" href="#example">Example</a></h1><pre class="listing"><span class="Comment"># nim c -r --threads:on --gc:orc example.nim</span>
+<span class="Keyword">import</span> <span class="Identifier">suber</span><span class="Punctuation">,</span> <span class="Identifier">os</span><span class="Punctuation">,</span> <span class="Identifier">random</span>
+
+<span class="Keyword">let</span> <span class="Identifier">topics</span> <span class="Operator">=</span> <span class="Punctuation">[</span><span class="StringLit">&quot;Art&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Science&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Nim&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Fishing&quot;</span><span class="Punctuation">]</span>
+<span class="Keyword">let</span> <span class="Identifier">subscribers</span> <span class="Operator">=</span> <span class="Punctuation">[</span><span class="StringLit">&quot;Amy&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Bob&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Chas&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Dave&quot;</span><span class="Punctuation">]</span>
+<span class="Keyword">let</span> <span class="Identifier">messagedatas</span> <span class="Operator">=</span> <span class="Punctuation">[</span><span class="StringLit">&quot;Good News&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Bad News&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Breaking News&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Old News&quot;</span><span class="Punctuation">]</span>
+<span class="Keyword">let</span> <span class="Identifier">publishers</span> <span class="Operator">=</span> <span class="Punctuation">[</span><span class="StringLit">&quot;Helsinki&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Tallinn&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Oslo&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Edinburgh&quot;</span><span class="Punctuation">]</span>
+<span class="Keyword">var</span> <span class="Identifier">bus</span><span class="Punctuation">:</span> <span class="Identifier">Suber</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">,</span> <span class="Identifier">string</span><span class="Punctuation">]</span> <span class="Comment"># string topics, string messagedatas</span>
+
+<span class="Keyword">proc</span> <span class="Identifier">onDeliver</span><span class="Punctuation">(</span><span class="Identifier">messages</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Keyword">ptr</span> <span class="Identifier">SuberMessage</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">,</span> <span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Operator">=</span>
+  <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
+    <span class="Identifier">echo</span> <span class="StringLit">&quot;&quot;</span>
+    <span class="Keyword">var</span> <span class="Identifier">subscriberids</span><span class="Punctuation">:</span> <span class="Identifier">IntSet</span>
+    <span class="Keyword">for</span> <span class="Identifier">message</span> <span class="Keyword">in</span> <span class="Identifier">messages</span><span class="Punctuation">:</span>
+      <span class="Keyword">var</span> <span class="Identifier">receivers</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Punctuation">:</span> <span class="Identifier">string</span>
+      <span class="Identifier">subscriberids</span><span class="Operator">.</span><span class="Identifier">clear</span><span class="Punctuation">(</span><span class="Punctuation">)</span>
+      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">getSubscribers</span><span class="Punctuation">(</span><span class="Identifier">message</span><span class="Punctuation">,</span> <span class="Identifier">subscriberids</span><span class="Punctuation">)</span>
+      <span class="Keyword">for</span> <span class="Identifier">subscriberid</span> <span class="Keyword">in</span> <span class="Identifier">subscriberids</span><span class="Punctuation">:</span> <span class="Identifier">receivers</span><span class="Operator">.</span><span class="Identifier">add</span><span class="Punctuation">(</span><span class="Identifier">subscribers</span><span class="Punctuation">[</span><span class="Identifier">subscriberid</span><span class="Punctuation">]</span> <span class="Operator">&amp;</span> <span class="CharLit">' '</span><span class="Punctuation">)</span>
+      <span class="Keyword">for</span> <span class="Identifier">topic</span> <span class="Keyword">in</span> <span class="Identifier">message</span><span class="Operator">.</span><span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">keys</span><span class="Punctuation">(</span><span class="Punctuation">)</span><span class="Punctuation">:</span> <span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">add</span><span class="Punctuation">(</span><span class="Identifier">topic</span> <span class="Operator">&amp;</span> <span class="CharLit">' '</span><span class="Punctuation">)</span>
+      <span class="Identifier">echo</span> <span class="StringLit">&quot;Delivery to &quot;</span><span class="Punctuation">,</span> <span class="Identifier">receivers</span><span class="Punctuation">,</span> <span class="StringLit">&quot;, concerning &quot;</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Punctuation">,</span> <span class="StringLit">&quot;: &quot;</span><span class="Punctuation">,</span> <span class="Identifier">message</span><span class="Operator">.</span><span class="Identifier">data</span>
+
+<span class="Keyword">proc</span> <span class="Identifier">onPullrequest</span><span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Punctuation">:</span> <span class="Identifier">int</span><span class="Punctuation">,</span> <span class="Identifier">topicswithexpiredstates</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="Identifier">messages</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Keyword">ptr</span> <span class="Identifier">SuberMessage</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">,</span> <span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Operator">=</span>
+  <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
+    <span class="Keyword">for</span> <span class="Identifier">message</span> <span class="Keyword">in</span> <span class="Identifier">messages</span><span class="Punctuation">:</span>
+      <span class="Keyword">var</span> <span class="Identifier">topics</span><span class="Punctuation">:</span> <span class="Identifier">string</span>
+      <span class="Keyword">for</span> <span class="Punctuation">(</span><span class="Identifier">topic</span> <span class="Punctuation">,</span> <span class="Identifier">state</span><span class="Punctuation">)</span> <span class="Keyword">in</span> <span class="Identifier">message</span><span class="Operator">.</span><span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">pairs</span><span class="Punctuation">(</span><span class="Punctuation">)</span><span class="Punctuation">:</span> <span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">add</span><span class="Punctuation">(</span><span class="Identifier">topic</span> <span class="Operator">&amp;</span> <span class="CharLit">'-'</span> <span class="Operator">&amp;</span> <span class="Operator">$</span><span class="Identifier">state</span> <span class="Operator">&amp;</span> <span class="CharLit">' '</span><span class="Punctuation">)</span>
+      <span class="Identifier">echo</span> <span class="StringLit">&quot;Delivery to &quot;</span><span class="Punctuation">,</span> <span class="Identifier">subscribers</span><span class="Punctuation">[</span><span class="Identifier">subscriber</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="StringLit">&quot; concerning &quot;</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Punctuation">,</span> <span class="StringLit">&quot;: &quot;</span><span class="Punctuation">,</span> <span class="Identifier">message</span><span class="Operator">.</span><span class="Identifier">data</span>
+
+<span class="Keyword">var</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Identifier">bool</span>
+
+<span class="Keyword">proc</span> <span class="Identifier">generateMessages</span><span class="Punctuation">(</span><span class="Identifier">publisher</span><span class="Punctuation">:</span> <span class="Identifier">int</span><span class="Punctuation">)</span> <span class="Operator">=</span>
+  <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
+    <span class="Keyword">while</span> <span class="Keyword">not</span> <span class="Identifier">stop</span><span class="Punctuation">:</span>
+      <span class="Identifier">write</span><span class="Punctuation">(</span><span class="Identifier">stdout</span><span class="Punctuation">,</span> <span class="Operator">$</span><span class="Identifier">publisher</span><span class="Punctuation">)</span><span class="Punctuation">;</span> <span class="Identifier">flushFile</span><span class="Punctuation">(</span><span class="Identifier">stdout</span><span class="Punctuation">)</span>
+      <span class="Keyword">var</span> <span class="Identifier">messagetopics</span><span class="Punctuation">:</span> <span class="Identifier">seq</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">]</span>
+      <span class="Keyword">for</span> <span class="Identifier">topicnumber</span> <span class="Keyword">in</span> <span class="DecNumber">1</span> <span class="Operator">..</span> <span class="DecNumber">1</span> <span class="Operator">+</span> <span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">2</span><span class="Punctuation">)</span><span class="Punctuation">:</span> <span class="Identifier">messagetopics</span><span class="Operator">.</span><span class="Identifier">add</span><span class="Punctuation">(</span><span class="Identifier">topics</span><span class="Punctuation">[</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3</span><span class="Punctuation">)</span><span class="Punctuation">]</span><span class="Punctuation">)</span>
+      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">push</span><span class="Punctuation">(</span><span class="Identifier">messagetopics</span><span class="Punctuation">,</span> <span class="Identifier">messagedatas</span><span class="Punctuation">[</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3</span><span class="Punctuation">)</span><span class="Punctuation">]</span> <span class="Operator">&amp;</span> <span class="StringLit">&quot; from &quot;</span> <span class="Operator">&amp;</span> <span class="Identifier">publishers</span><span class="Punctuation">[</span><span class="Identifier">publisher</span><span class="Punctuation">]</span><span class="Punctuation">)</span>
+      <span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">100</span><span class="Operator">+</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">500</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
+
+<span class="Keyword">proc</span> <span class="Identifier">deliver</span><span class="Punctuation">(</span><span class="Punctuation">)</span> <span class="Operator">=</span>
+  <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
+    <span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">1</span> <span class="Operator">..</span> <span class="DecNumber">10</span><span class="Punctuation">:</span>
+      <span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">1000</span><span class="Punctuation">)</span>
+      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">doDelivery</span><span class="Punctuation">(</span><span class="Punctuation">)</span>
+    <span class="Identifier">stop</span> <span class="Operator">=</span> <span class="Identifier">true</span>
+
+<span class="Identifier">initSuber</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">,</span> <span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">(</span><span class="Identifier">bus</span><span class="Punctuation">,</span> <span class="Identifier">onDeliver</span><span class="Punctuation">)</span>
+
+<span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..&lt;</span> <span class="DecNumber">4</span><span class="Punctuation">:</span>
+  <span class="Keyword">for</span> <span class="Identifier">j</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..</span> <span class="Identifier">i</span><span class="Punctuation">:</span>
+    <span class="Keyword">discard</span> <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">subscribe</span><span class="Punctuation">(</span><span class="Identifier">i</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Punctuation">[</span><span class="Identifier">j</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="Identifier">true</span><span class="Punctuation">)</span>
+
+<span class="Keyword">var</span> <span class="Identifier">delivererthread</span><span class="Punctuation">:</span> <span class="Identifier">Thread</span><span class="Punctuation">[</span><span class="Identifier">void</span><span class="Punctuation">]</span>
+<span class="Identifier">createThread</span><span class="Punctuation">(</span><span class="Identifier">delivererthread</span><span class="Punctuation">,</span> <span class="Identifier">deliver</span><span class="Punctuation">)</span>
+<span class="Keyword">var</span> <span class="Identifier">publisherthreads</span><span class="Punctuation">:</span> <span class="Identifier">array</span><span class="Punctuation">[</span><span class="DecNumber">4</span><span class="Punctuation">,</span> <span class="Identifier">Thread</span><span class="Punctuation">[</span><span class="Identifier">int</span><span class="Punctuation">]</span><span class="Punctuation">]</span>
+<span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..&lt;</span> <span class="DecNumber">4</span><span class="Punctuation">:</span> <span class="Identifier">createThread</span><span class="Punctuation">(</span><span class="Identifier">publisherthreads</span><span class="Punctuation">[</span><span class="Identifier">i</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="Identifier">generateMessages</span><span class="Punctuation">,</span> <span class="Identifier">i</span><span class="Punctuation">)</span>
+<span class="Identifier">joinThreads</span><span class="Punctuation">(</span><span class="Identifier">publisherthreads</span><span class="Punctuation">)</span>
+<span class="Identifier">joinThread</span><span class="Punctuation">(</span><span class="Identifier">delivererthread</span><span class="Punctuation">)</span>
+
+<span class="Identifier">echo</span> <span class="StringLit">&quot;----&quot;</span>
+<span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">2000</span><span class="Punctuation">)</span>
+<span class="Identifier">echo</span><span class="Punctuation">(</span><span class="StringLit">&quot;Chas requests redelivery of Nim-related news since 30th Nim-related message!&quot;</span><span class="Punctuation">)</span>
+<span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">pull</span><span class="Punctuation">(</span><span class="Identifier">subscribers</span><span class="Operator">.</span><span class="Identifier">find</span><span class="Punctuation">(</span><span class="StringLit">&quot;Chas&quot;</span><span class="Punctuation">)</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Nim&quot;</span><span class="Punctuation">,</span> <span class="DecNumber">30</span><span class="Punctuation">,</span> <span class="Identifier">onPullrequest</span><span class="Punctuation">)</span>
+<span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">1000</span><span class="Punctuation">)</span></pre></p>
   <div class="section" id="7">
 <h1><a class="toc-backref" href="#7">Types</a></h1>
 <dl class="item">
@@ -1223,7 +1303,8 @@ span.attachedType {
 
 </dd>
 <a id="PullCallback"></a>
-<dt><pre><a href="suber.html#PullCallback"><span class="Identifier">PullCallback</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">;</span> <span class="Identifier">TData</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">proc</span> <span class="Other">(</span><span class="Identifier">topicswithexpiredstates</span><span class="Other">:</span> <span class="Identifier">openArray</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">]</span><span class="Other">;</span>
+<dt><pre><a href="suber.html#PullCallback"><span class="Identifier">PullCallback</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">;</span> <span class="Identifier">TData</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">proc</span> <span class="Other">(</span><span class="Identifier">subscriber</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span>
+                                    <span class="Identifier">topicswithexpiredstates</span><span class="Other">:</span> <span class="Identifier">openArray</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">]</span><span class="Other">;</span>
     <span class="Identifier">messages</span><span class="Other">:</span> <span class="Identifier">openArray</span><span class="Other">[</span><span class="Keyword">ptr</span> <a href="suber.html#SuberMessage"><span class="Identifier">SuberMessage</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">]</span><span class="Other">)</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
 <dd>
 
@@ -1431,17 +1512,17 @@ span.attachedType {
 
 
 </dd>
-<a id="push,Suber[TTopic,TData],sinkTData,sinkTable[TTopic,int]"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTData%2CsinkTable%5BTTopic%2Cint%5D"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span>
-                         <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">Table</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">int</span><span class="Other">]</span><span class="Other">)</span></pre></dt>
+<a id="push,Suber[TTopic,TData],sinkTable[TTopic,int],sinkTData"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTable%5BTTopic%2Cint%5D%2CsinkTData"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">;</span>
+                         <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">Table</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">int</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">)</span></pre></dt>
 <dd>
 
 
 
 </dd>
-<a id="push,Suber[TTopic,TData],sinkTData,varargs[TTopic]"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%5BTTopic%2CTData%5D%2CsinkTData%2Cvarargs%5BTTopic%5D"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span>
-                         <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">varargs</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">]</span><span class="Other">)</span></pre></dt>
+<a id="push,Suber[TTopic,TData],varargs[TTopic],sinkTData"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%5BTTopic%2CTData%5D%2Cvarargs%5BTTopic%5D%2CsinkTData"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">,</span> <span class="Identifier">TData</span><span class="Other">]</span><span class="Other">;</span>
+                         <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">varargs</span><span class="Other">[</span><span class="Identifier">TTopic</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">)</span></pre></dt>
 <dd>
 
 
@@ -1491,12 +1572,45 @@ span.attachedType {
 
 
 </dd>
-<a id="initSuber,PushCallback[TTTopic: TData,TTData: TData],DeliverCallback[TTTopic: TData,TTData: TData],int,int,int"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#initSuber%2CPushCallback%5BTTTopic%3A+TData%2CTTData%3A+TData%5D%2CDeliverCallback%5BTTTopic%3A+TData%2CTTData%3A+TData%5D%2Cint%2Cint%2Cint"><span class="Identifier">initSuber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">:</span> <a href="suber.html#TData"><span class="Identifier">TData</span></a><span class="Other">]</span><span class="Other">(</span><span class="Identifier">onPush</span><span class="Other">:</span> <a href="suber.html#PushCallback"><span class="Identifier">PushCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
-    <span class="Identifier">onDeliver</span><span class="Other">:</span> <a href="suber.html#DeliverCallback"><span class="Identifier">DeliverCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">cachemaxcapacity</span> <span class="Other">=</span> <span class="DecNumber">10000000</span><span class="Other">;</span>
-                                       <span class="Identifier">cachelength</span> <span class="Other">=</span> <span class="DecNumber">1000000</span><span class="Other">;</span>
-                                       <span class="Identifier">maxdeliverysize</span> <span class="Other">=</span> <span class="Operator">-</span><span class="DecNumber">1</span><span class="Other">;</span> <span class="Identifier">channelsize</span> <span class="Other">=</span> <span class="DecNumber">200</span><span class="Other">)</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span>
-    <span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span></pre></dt>
+<a id="initSuber,Suber[TTTopic,TTData],PushCallback[TTTopic,TTData],DeliverCallback[TTTopic,TTData],int,int,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#initSuber%2CSuber%5BTTTopic%2CTTData%5D%2CPushCallback%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"><span class="Identifier">initSuber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                                <span class="Identifier">onPush</span><span class="Other">:</span> <a href="suber.html#PushCallback"><span class="Identifier">PushCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                                <span class="Identifier">onDeliver</span><span class="Other">:</span> <a href="suber.html#DeliverCallback"><span class="Identifier">DeliverCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                                <span class="Identifier">cachemaxcapacity</span> <span class="Other">=</span> <span class="DecNumber">10000000</span><span class="Other">;</span>
+                                <span class="Identifier">cachelength</span> <span class="Other">=</span> <span class="DecNumber">1000000</span><span class="Other">;</span> <span class="Identifier">maxdeliverysize</span> <span class="Other">=</span> <span class="Operator">-</span><span class="DecNumber">1</span><span class="Other">;</span>
+                                <span class="Identifier">channelsize</span> <span class="Other">=</span> <span class="DecNumber">200</span><span class="Other">)</span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="initSuber,Suber[TTTopic,TTData],DeliverCallback[TTTopic,TTData],int,int,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#initSuber%2CSuber%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"><span class="Identifier">initSuber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <span class="Keyword">var</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                                <span class="Identifier">onDeliver</span><span class="Other">:</span> <a href="suber.html#DeliverCallback"><span class="Identifier">DeliverCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                                <span class="Identifier">cachemaxcapacity</span> <span class="Other">=</span> <span class="DecNumber">10000000</span><span class="Other">;</span>
+                                <span class="Identifier">cachelength</span> <span class="Other">=</span> <span class="DecNumber">1000000</span><span class="Other">;</span> <span class="Identifier">maxdeliverysize</span> <span class="Other">=</span> <span class="Operator">-</span><span class="DecNumber">1</span><span class="Other">;</span>
+                                <span class="Identifier">channelsize</span> <span class="Other">=</span> <span class="DecNumber">200</span><span class="Other">)</span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="newSuber,PushCallback[TTTopic,TTData],DeliverCallback[TTTopic,TTData],int,int,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#newSuber%2CPushCallback%5BTTTopic%2CTTData%5D%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"><span class="Identifier">newSuber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">onPush</span><span class="Other">:</span> <a href="suber.html#PushCallback"><span class="Identifier">PushCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                               <span class="Identifier">onDeliver</span><span class="Other">:</span> <a href="suber.html#DeliverCallback"><span class="Identifier">DeliverCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                               <span class="Identifier">cachemaxcapacity</span> <span class="Other">=</span> <span class="DecNumber">10000000</span><span class="Other">;</span>
+                               <span class="Identifier">cachelength</span> <span class="Other">=</span> <span class="DecNumber">1000000</span><span class="Other">;</span> <span class="Identifier">maxdeliverysize</span> <span class="Other">=</span> <span class="Operator">-</span><span class="DecNumber">1</span><span class="Other">;</span>
+                               <span class="Identifier">channelsize</span> <span class="Other">=</span> <span class="DecNumber">200</span><span class="Other">)</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="newSuber,DeliverCallback[TTTopic,TTData],int,int,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#newSuber%2CDeliverCallback%5BTTTopic%2CTTData%5D%2Cint%2Cint%2Cint"><span class="Identifier">newSuber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">onDeliver</span><span class="Other">:</span> <a href="suber.html#DeliverCallback"><span class="Identifier">DeliverCallback</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span><span class="Other">;</span>
+                               <span class="Identifier">cachemaxcapacity</span> <span class="Other">=</span> <span class="DecNumber">10000000</span><span class="Other">;</span>
+                               <span class="Identifier">cachelength</span> <span class="Other">=</span> <span class="DecNumber">1000000</span><span class="Other">;</span> <span class="Identifier">maxdeliverysize</span> <span class="Other">=</span> <span class="Operator">-</span><span class="DecNumber">1</span><span class="Other">;</span>
+                               <span class="Identifier">channelsize</span> <span class="Other">=</span> <span class="DecNumber">200</span><span class="Other">)</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TTTopic</span><span class="Other">,</span> <span class="Identifier">TTData</span><span class="Other">]</span></pre></dt>
 <dd>
 
 
@@ -1519,7 +1633,7 @@ span.attachedType {
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-02-10 13:58:23 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-02-11 15:53:18 UTC</small>
       </div>
     </div>
   </div>

@@ -1,7 +1,7 @@
 # nim c -r --gc:arc --d:danger test_speed.nim
 
 from os import sleep
-import ../suber
+import ../src/suber
 
 const TestDuration = 10
 const ThreadCount = 3
@@ -12,7 +12,7 @@ proc len(i: int): int = 1
 
 proc onDeliver(messages: openArray[ptr SuberMessage[int, int]]) = {.gcsafe.}: discard messagecount.atomicInc(messages.len)
   
-var bus = initSuber[int, int](nil, onDeliver, 100000, 100000, 100, 100)
+var bus = newSuber[int, int](onDeliver, 1000000, 100000, 100, 100)
 discard bus.subscribe(1, 1, true)
 
 var stop: bool
