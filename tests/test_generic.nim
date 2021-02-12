@@ -4,6 +4,7 @@ import os, random, times, std/monotimes
 import ../src/suber
 
 const TestDuration = initDuration(seconds = 10)
+const MaxTopics = 10000
 
 type
   MessageData = object
@@ -27,8 +28,6 @@ var
 var
   addtopics, removetopics, addsubscribers, removesubscribers: int
 
-proc len(m: MessageData): int = m.first.len + m.second.len
-
 proc onAPush(message: ptr Message, subscribers: IntSet) = aPushedmessages.inc
 
 proc onBPush(message: ptr Message, subscribers: IntSet) = bPushedmessages.inc
@@ -39,14 +38,16 @@ proc onADeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
 proc onBDeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
   bDeliveredmessages += messages.len
 
-var a = newSuber[string, MessageData](onAPush, onADeliver)
+var a: Suber[string, MessageData, MaxTopics]
+a.initSuber(onAPush, onADeliver)
 
-var b = newSuber[string, MessageData](onBPush, onBDeliver, 1000, 20, 5, 10)
+var b: Suber[string, MessageData, MaxTopics]
+b.initSuber(onBPush, onBDeliver, 1000, 20, 5, 10)
 
 var rounds = 0
 
 proc addTopic() =
-  if a.getTopiccount() == SuberMaxTopics: return
+  if a.getTopiccount() == MaxTopics: return
   addtopics.inc
   let newtopic = "topic" & $rounds
   topics.add(TopicData(name: newtopic, subscribers: initIntSet()))
@@ -98,8 +99,8 @@ proc removeSubscriber() =
   subscribers.del(r)
  
 proc push() =
-  a.push(MessageData("topic", first: $rounds, second: $rounds))
-  b.push(MessageData("topic", first: $rounds, second: $rounds))
+  a.push("topic", data=MessageData(first: $rounds, second: $rounds))
+  b.push("topic", MessageData(first: $rounds, second: $rounds), ($rounds).len() * 2)
   publishedmessages.inc
  
 proc run() =

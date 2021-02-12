@@ -1,14 +1,13 @@
-# nim c -r --gc:orc --d:release test_delivery.nim
+# nim c -r --gc:arc --threads:on --d:release test_delivery.nim
 
 from os import sleep
 import locks, ../src/suber
 
 const DeliveryCount = 100000
 const ThreadCount = 4
+const TopicCount = 1
 
 var pushedmessages, aDeliveredmessages, bDeliveredmessages: IntSet
-
-proc len(i: int): int = 1
 
 proc onADeliver(messages: openArray[ptr SuberMessage[int, int]]) =
   {.gcsafe.}:
@@ -18,9 +17,11 @@ proc onBDeliver(messages: openArray[ptr SuberMessage[int, int]]) =
   {.gcsafe.}:
     for m in messages: bDeliveredmessages.incl(m.data)
 
-var a = newSuber[int, int](onADeliver)
+var a: Suber[int, int, TopicCount]
+a.initSuber(onADeliver)
 
-var b = newSuber[int, int](onBDeliver, 100, 20000, 10000, 50)
+var b: Suber[int, int, TopicCount]
+b.initSuber(onBDeliver, 100, 20000, 10000, 50)
 
 var lock: Lock
 
@@ -31,8 +32,8 @@ proc run(t: int) =
       i.inc
       if i mod 1000 == 0: a.doDelivery()
       let data = i+(t*DeliveryCount)
-      a.push(1, data)
-      b.push(1, data)
+      a.push(1, data=data)
+      b.push(1, data=data)
       withLock(lock): pushedmessages.incl(data)
 
 var threads: array[ThreadCount, Thread[int]]
@@ -49,3 +50,5 @@ doAssert(pushedmessages.len == ThreadCount * DeliveryCount)
 doAssert(pushedmessages.len == aDeliveredmessages.len)
 doAssert(aDeliveredmessages.len == bDeliveredmessages.len)
 echo "ok"
+echo "a Max channel queue length: ", a.getChannelQueueLengths[2]
+echo "b Max channel queue length: ", b.getChannelQueueLengths[2]
