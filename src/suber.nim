@@ -88,14 +88,14 @@
 ##  echo("Chas requests redelivery of Nim-related news since 30th Nim-related message!")
 ##  bus.pull(subscribers.find("Chas"), "Nim", 30, onPullrequest)
 ##  sleep(1000)
-##    
-##  static: doAssert(compileOption("threads"), "Suber requires threads:on compiler option")
 ##
 ##
 ##
-##  Documentation in progress...
-##  ============================
+## Documentation in progress...
+## ============================
 ## 
+
+static: doAssert(compileOption("threads"), "Suber requires threads:on compiler option") 
   
 import cpuinfo, intsets, tables, sets, stashtable
 export intsets, tables
