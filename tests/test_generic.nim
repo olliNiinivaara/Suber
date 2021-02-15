@@ -10,47 +10,43 @@ type
   MessageData = object
     first: string
     second: string
+    messagenumber: int
 
-  Message = SuberMessage[string, MessageData]
+  Message = SuberMessage[MessageData]
 
   TopicData  = object
-    name: string
-    currenttopicstate: int
+    topic: Topic
     subscribers: IntSet
 
 var
   publishedmessages: int
   topics: seq[TopicData]
-  subscribers: seq[int]
+  subscribers: seq[Subscriber]
   aPushedmessages, bPushedmessages: int
   aDeliveredmessages, bDeliveredmessages: int
 
 var
   addtopics, removetopics, addsubscribers, removesubscribers: int
 
-proc onAPush(message: ptr Message, subscribers: IntSet) = aPushedmessages.inc
+proc onAPush(message: ptr Message) = aPushedmessages.inc
 
-proc onBPush(message: ptr Message, subscribers: IntSet) = bPushedmessages.inc
+proc onBPush(message: ptr Message) = bPushedmessages.inc
 
-proc onADeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
-  aDeliveredmessages += messages.len
+proc onADeliver(messages: openArray[ptr Message]) = aDeliveredmessages += messages.len
 
-proc onBDeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} =
-  bDeliveredmessages += messages.len
+proc onBDeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} = bDeliveredmessages += messages.len
 
-var a: Suber[string, MessageData, MaxTopics]
-a.initSuber(onAPush, onADeliver)
+let a: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics](onAPush, onADeliver)
 
-var b: Suber[string, MessageData, MaxTopics]
-b.initSuber(onBPush, onBDeliver, 1000, 20, 5, 10)
+let b: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics](onBPush, onBDeliver, 1000, 20, 5, 10)
 
 var rounds = 0
 
 proc addTopic() =
   if a.getTopiccount() == MaxTopics: return
   addtopics.inc
-  let newtopic = "topic" & $rounds
-  topics.add(TopicData(name: newtopic, subscribers: initIntSet()))
+  let newtopic = rounds.Topic
+  topics.add(TopicData(topic: newtopic, subscribers: initIntSet()))
   a.addTopic(newtopic)
   b.addTopic(newtopic)
   doAssert(a.hasTopic(newtopic))
@@ -60,52 +56,52 @@ proc removeTopic() =
   if topics.len == 0: return
   removetopics.inc
   let r = rand(topics.len - 1)
-  doAssert(a.hasTopic(topics[r].name))
-  doAssert(b.hasTopic(topics[r].name))
-  a.removeTopic(topics[r].name)
-  b.removeTopic(topics[r].name)
-  doAssert(not a.hasTopic(topics[r].name))
-  doAssert(not b.hasTopic(topics[r].name))
+  doAssert(a.hasTopic(topics[r].topic))
+  doAssert(b.hasTopic(topics[r].topic))
+  a.removeTopic(topics[r].topic)
+  b.removeTopic(topics[r].topic)
+  doAssert(not a.hasTopic(topics[r].topic))
+  doAssert(not b.hasTopic(topics[r].topic))
   topics.del(r)
-  var nomores: seq[int]
+  var nomores: seq[Subscriber]
   for s in 0 ..< subscribers.len:
-    if not a.hasSubscriber(subscribers[s]): nomores.add(subscribers[s])
+    if a.getSubscriptions(subscribers[s]).len == 0: nomores.add(subscribers[s])
   for n in nomores: subscribers.del(subscribers.find(n))
 
 proc addSubscriber() =
   addsubscribers.inc
   if topics.len == 0: addTopic()
-  let newsubscriber = rounds
+  let newsubscriber = rounds.Subscriber
   subscribers.add(newsubscriber)
   let r = rand(topics.len - 1)
-  topics[r].subscribers.incl(newsubscriber)
-  doAssert(a.subscribe(newsubscriber, topics[r].name) > -1)
-  doAssert(b.subscribe(newsubscriber, topics[r].name) > -1)
-  doAssert(a.getSubscribers(topics[r].name) == topics[r].subscribers)
-  doAssert(b.getSubscribers(topics[r].name) == topics[r].subscribers)
+  topics[r].subscribers.incl(newsubscriber.int)
+  doAssert(a.subscribe(newsubscriber, topics[r].topic))
+  doAssert(b.subscribe(newsubscriber, topics[r].topic))
+  doAssert(a.getSubscribers(topics[r].topic) == topics[r].subscribers)
+  doAssert(b.getSubscribers(topics[r].topic) == topics[r].subscribers)
 
 proc removeSubscriber() =
   if subscribers.len == 0: return
   removesubscribers.inc
   let r = rand(subscribers.len - 1)
-  doAssert(a.hasSubscriber(subscribers[r]))
-  doAssert(b.hasSubscriber(subscribers[r]))
+  doAssert(a.getSubscriptions(subscribers[r]).len > 0)
+  doAssert(b.getSubscriptions(subscribers[r]).len > 0)
   a.unsubscribe(subscribers[r])
   b.unsubscribe(subscribers[r])
-  doAssert(not a.hasSubscriber(subscribers[r]))
-  doAssert(not b.hasSubscriber(subscribers[r]))  
+  doAssert(a.getSubscriptions(subscribers[r]).len == 0)
+  doAssert(b.getSubscriptions(subscribers[r]).len == 0)
   for topicdata in topics.mitems:
-    topicdata.subscribers.excl(subscribers[r])
+    topicdata.subscribers.excl(subscribers[r].int)
   subscribers.del(r)
  
 proc push() =
-  a.push("topic", data=MessageData(first: $rounds, second: $rounds))
-  b.push("topic", MessageData(first: $rounds, second: $rounds), ($rounds).len() * 2)
   publishedmessages.inc
+  a.push(1.Topic, getMonotime(), MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
+  b.push(1.Topic, getMonotime(), MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
  
 proc run() =
-  discard a.subscribe(-1, "topic", true)
-  discard b.subscribe(-1, "topic", true)
+  discard a.subscribe(1.Subscriber, 1.Topic, true)
+  discard b.subscribe(1.Subscriber, 1.Topic, true)
   randomize()
   let startTime = getMonoTime()
   echo "Single-threaded generic testing for ", TestDuration

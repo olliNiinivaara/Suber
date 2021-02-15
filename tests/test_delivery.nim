@@ -9,19 +9,16 @@ const TopicCount = 1
 
 var pushedmessages, aDeliveredmessages, bDeliveredmessages: IntSet
 
-proc onADeliver(messages: openArray[ptr SuberMessage[int, int]]) =
+proc onADeliver(messages: openArray[ptr SuberMessage[int]]) =
   {.gcsafe.}:
     for m in messages: aDeliveredmessages.incl(m.data)
 
-proc onBDeliver(messages: openArray[ptr SuberMessage[int, int]]) =
+proc onBDeliver(messages: openArray[ptr SuberMessage[int]]) =
   {.gcsafe.}:
     for m in messages: bDeliveredmessages.incl(m.data)
 
-var a: Suber[int, int, TopicCount]
-a.initSuber(onADeliver)
-
-var b: Suber[int, int, TopicCount]
-b.initSuber(onBDeliver, 100, 20000, 10000, 50)
+let a: Suber[int, TopicCount] = newSuber[int, TopicCount](onADeliver)
+var b: Suber[int, TopicCount] = newSuber[int, TopicCount](onBDeliver, 100, 20000, 10000, 50)
 
 var lock: Lock
 
@@ -32,13 +29,13 @@ proc run(t: int) =
       i.inc
       if i mod 1000 == 0: a.doDelivery()
       let data = i+(t*DeliveryCount)
-      a.push(1, data=data)
-      b.push(1, data=data)
+      a.push(1.Topic, getMonoTime(), data)
+      b.push(1.Topic, getMonoTime(), data)
       withLock(lock): pushedmessages.incl(data)
 
 var threads: array[ThreadCount, Thread[int]]
-discard a.subscribe(1, 1, true)
-discard b.subscribe(1, 1, true)
+discard a.subscribe(1.Subscriber, 1.Topic, true)
+discard b.subscribe(1.Subscriber, 1.Topic, true)
 lock.initLock
 echo "Multi-threaded delivery testing with ", ThreadCount * DeliveryCount, " messages"
 for i in 0 ..< ThreadCount: createThread(threads[i], run, i)
