@@ -3,7 +3,7 @@
 from os import sleep
 import locks, ../src/suber
 
-const DeliveryCount = 100000
+const DeliveryCount = 10000
 const ThreadCount = 4
 const TopicCount = 1
 
@@ -17,8 +17,8 @@ proc onBDeliver(messages: openArray[ptr SuberMessage[int]]) =
   {.gcsafe.}:
     for m in messages: bDeliveredmessages.incl(m.data)
 
-let a: Suber[int, TopicCount] = newSuber[int, TopicCount](onADeliver)
-var b: Suber[int, TopicCount] = newSuber[int, TopicCount](onBDeliver, 100, 20000, 10000, 50)
+let a = newSuber[int, TopicCount](onADeliver)
+let b = newSuber[int, TopicCount](onBDeliver, 10000, 20000, 10000, 50)
 
 var lock: Lock
 
@@ -29,20 +29,20 @@ proc run(t: int) =
       i.inc
       if i mod 1000 == 0: a.doDelivery()
       let data = i+(t*DeliveryCount)
-      a.push(1.Topic, getMonoTime(), data)
-      b.push(1.Topic, getMonoTime(), data)
+      a.push(1.Topic, data)
+      b.push(1.Topic, data, 1)
       withLock(lock): pushedmessages.incl(data)
 
 var threads: array[ThreadCount, Thread[int]]
-discard a.subscribe(1.Subscriber, 1.Topic, true)
-discard b.subscribe(1.Subscriber, 1.Topic, true)
+a.subscribe(1.Subscriber, 1.Topic, true)
+b.subscribe(1.Subscriber, 1.Topic, true)
 lock.initLock
 echo "Multi-threaded delivery testing with ", ThreadCount * DeliveryCount, " messages"
 for i in 0 ..< ThreadCount: createThread(threads[i], run, i)
 joinThreads(threads)
 a.doDelivery()
 b.doDelivery()
-sleep(1000)
+joinThreads([a.stop(), b.stop()])
 doAssert(pushedmessages.len == ThreadCount * DeliveryCount)
 doAssert(pushedmessages.len == aDeliveredmessages.len)
 doAssert(aDeliveredmessages.len == bDeliveredmessages.len)

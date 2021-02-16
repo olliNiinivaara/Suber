@@ -55,8 +55,7 @@ function main() {
 </script>
 
 <style>
-
-/*
+  /*
 Stylesheet for use with Docutils/rst2html.
 
 See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
@@ -961,7 +960,6 @@ span.attachedType {
   visibility: hidden;
 }
 
-
 </style>
 
 </head>
@@ -1015,7 +1013,7 @@ span.attachedType {
     gcsafe, raises: [].}">PullCallback</a></li>
   <li><a class="reference" href="#SuberMessageKind"
     title="SuberMessageKind = enum
-  smNil, smMessage, smDeliver, smPull">SuberMessageKind</a></li>
+  smNil, smMessage, smDeliver, smPull, smFind">SuberMessageKind</a></li>
   <li><a class="reference" href="#SuberMessage"
     title="SuberMessage[TData] = object
   case kind*: SuberMessageKind
@@ -1030,6 +1028,11 @@ span.attachedType {
       pulltopics: IntSet
       aftertimestamp: MonoTime
       pullcallback: PullCallback[TData]
+
+  of smFind:
+      findtimestamp: MonoTime
+      findcallback: proc (query: MonoTime; message: ptr SuberMessage[TData]) {.
+          gcsafe, raises: [].}
 
   else:
     nil">SuberMessage</a></li>
@@ -1054,7 +1057,8 @@ span.attachedType {
   channel: Channel[SuberMessage[TData]]
   thread: Thread[Suber[TData, SuberMaxTopics]]
   peakchannelqueuelength: int
-  maxchannelqueuelength: int">Suber</a></li>
+  maxchannelqueuelength: int
+  drainbeforestop: bool">Suber</a></li>
 
   </ul>
 </li>
@@ -1084,13 +1088,21 @@ span.attachedType {
     title="doDelivery[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics])">doDelivery,<wbr>Suber[TData,<wbr>SuberMaxTopics]</a></li>
 
   </ul>
+  <ul class="simple nested-toc-section">stopImmediately
+      <li><a class="reference" href="#stopImmediately%2CSuber%5BTData%2CSuberMaxTopics%5D"
+    title="stopImmediately[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics])">stopImmediately,<wbr>Suber[TData,<wbr>SuberMaxTopics]</a></li>
+
+  </ul>
   <ul class="simple nested-toc-section">push
-      <li><a class="reference" href="#push%2CSuber%2CsinkIntSet%2CMonoTime%2CsinkTData%2Cint"
-    title="push[TData](suber: Suber; topics: sink IntSet; timestamp: MonoTime;
-            data: sink TData; size: int = 0)">push,<wbr>Suber,<wbr>sinkIntSet,<wbr>MonoTime,<wbr>sinkTData,<wbr>int</a></li>
-  <li><a class="reference" href="#push%2CSuber%2CTopic%2CMonoTime%2CsinkTData%2Cint"
-    title="push[TData](suber: Suber; topic: Topic; timestamp: MonoTime; data: sink TData;
-            size: int = 0)">push,<wbr>Suber,<wbr>Topic,<wbr>MonoTime,<wbr>sinkTData,<wbr>int</a></li>
+      <li><a class="reference" href="#push%2CSuber%2CsinkIntSet%2CsinkTData%2Cint"
+    title="push[TData](suber: Suber; topics: sink IntSet; data: sink TData; size: int = 0)">push,<wbr>Suber,<wbr>sinkIntSet,<wbr>sinkTData,<wbr>int</a></li>
+  <li><a class="reference" href="#push%2CSuber%2CTopic%2CsinkTData%2Cint"
+    title="push[TData](suber: Suber; topic: Topic; data: sink TData; size: int = 0)">push,<wbr>Suber,<wbr>Topic,<wbr>sinkTData,<wbr>int</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">toMonoTime
+      <li><a class="reference" href="#toMonoTime%2Cint64"
+    title="toMonoTime(i: int64): MonoTime">toMonoTime,<wbr>int64</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">hasTopic
@@ -1101,6 +1113,12 @@ span.attachedType {
   <ul class="simple nested-toc-section">getChannelQueueLengths
       <li><a class="reference" href="#getChannelQueueLengths%2CSuber"
     title="getChannelQueueLengths(suber: Suber): (int, int, int)">getChannelQueueLengths,<wbr>Suber</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">stop
+      <li><a class="reference" href="#stop%2CSuber%5BTData%2CSuberMaxTopics%5D"
+    title="stop[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]): Thread[
+    Suber[TData, SuberMaxTopics]]">stop,<wbr>Suber[TData,<wbr>SuberMaxTopics]</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">getSubscribers
@@ -1122,11 +1140,6 @@ span.attachedType {
   <ul class="simple nested-toc-section">getTopiccount
       <li><a class="reference" href="#getTopiccount%2CSuber"
     title="getTopiccount(suber: Suber): int">getTopiccount,<wbr>Suber</a></li>
-
-  </ul>
-  <ul class="simple nested-toc-section">stopSuber
-      <li><a class="reference" href="#stopSuber%2CSuber"
-    title="stopSuber(suber: Suber)">stopSuber,<wbr>Suber</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">newSuber
@@ -1167,6 +1180,12 @@ span.attachedType {
   <ul class="simple nested-toc-section">removeTopic
       <li><a class="reference" href="#removeTopic%2CSuber%2CTopic"
     title="removeTopic(suber: Suber; topic: Topic)">removeTopic,<wbr>Suber,<wbr>Topic</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">find
+      <li><a class="reference" href="#find%2CSuber%2CMonoTime%2Cproc%28MonoTime%2Cptr.SuberMessage%5BTData%5D%29"
+    title="find[TData](suber: Suber; query: MonoTime; callback: proc (query: MonoTime;
+    message: ptr SuberMessage[TData]) {.gcsafe, raises: [].})">find,<wbr>Suber,<wbr>MonoTime,<wbr>proc(MonoTime,<wbr>ptr.SuberMessage[TData])</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">setPushCallback
@@ -1215,13 +1234,13 @@ span.attachedType {
 <span class="Keyword">var</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Identifier">bool</span>
 
 <span class="Keyword">proc</span> <span class="Identifier">generateMessages</span><span class="Punctuation">(</span><span class="Identifier">publisher</span><span class="Punctuation">:</span> <span class="Identifier">int</span><span class="Punctuation">)</span> <span class="Operator">=</span>
-  <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
-    <span class="Keyword">while</span> <span class="Keyword">not</span> <span class="Identifier">stop</span><span class="Punctuation">:</span>
+<span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
+    <span class="Keyword">while</span> <span class="Identifier">true</span><span class="Punctuation">:</span>
+      <span class="Keyword">if</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Keyword">break</span> <span class="Keyword">else</span><span class="Punctuation">:</span> <span class="Punctuation">(</span><span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">100</span><span class="Operator">+</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">500</span><span class="Punctuation">)</span><span class="Punctuation">)</span> <span class="Punctuation">;</span> <span class="Keyword">if</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Keyword">break</span><span class="Punctuation">)</span>
       <span class="Identifier">write</span><span class="Punctuation">(</span><span class="Identifier">stdout</span><span class="Punctuation">,</span> <span class="Operator">$</span><span class="Identifier">publishers</span><span class="Punctuation">[</span><span class="Identifier">publisher</span><span class="Punctuation">]</span> <span class="Operator">&amp;</span> <span class="StringLit">&quot;, &quot;</span><span class="Punctuation">)</span><span class="Punctuation">;</span> <span class="Identifier">flushFile</span><span class="Punctuation">(</span><span class="Identifier">stdout</span><span class="Punctuation">)</span>
       <span class="Keyword">var</span> <span class="Identifier">messagetopics</span> <span class="Operator">=</span> <span class="Identifier">initIntSet</span><span class="Punctuation">(</span><span class="Punctuation">)</span>
       <span class="Keyword">for</span> <span class="Identifier">topicnumber</span> <span class="Keyword">in</span> <span class="DecNumber">1</span> <span class="Operator">..</span> <span class="DecNumber">1</span> <span class="Operator">+</span> <span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">2</span><span class="Punctuation">)</span><span class="Punctuation">:</span> <span class="Identifier">messagetopics</span><span class="Operator">.</span><span class="Identifier">incl</span><span class="Punctuation">(</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
-      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">push</span><span class="Punctuation">(</span><span class="Identifier">messagetopics</span><span class="Punctuation">,</span> <span class="Identifier">getMonotime</span><span class="Punctuation">(</span><span class="Punctuation">)</span><span class="Punctuation">,</span> <span class="Identifier">messagedatas</span><span class="Punctuation">[</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3</span><span class="Punctuation">)</span><span class="Punctuation">]</span> <span class="Operator">&amp;</span> <span class="StringLit">&quot; from &quot;</span> <span class="Operator">&amp;</span> <span class="Identifier">publishers</span><span class="Punctuation">[</span><span class="Identifier">publisher</span><span class="Punctuation">]</span><span class="Punctuation">)</span>
-      <span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">100</span><span class="Operator">+</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">500</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
+      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">push</span><span class="Punctuation">(</span><span class="Identifier">messagetopics</span><span class="Punctuation">,</span> <span class="Identifier">messagedatas</span><span class="Punctuation">[</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3</span><span class="Punctuation">)</span><span class="Punctuation">]</span> <span class="Operator">&amp;</span> <span class="StringLit">&quot; from &quot;</span> <span class="Operator">&amp;</span> <span class="Identifier">publishers</span><span class="Punctuation">[</span><span class="Identifier">publisher</span><span class="Punctuation">]</span><span class="Punctuation">)</span>
 
 <span class="Keyword">proc</span> <span class="Identifier">deliver</span><span class="Punctuation">(</span><span class="Punctuation">)</span> <span class="Operator">=</span>
   <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
@@ -1248,23 +1267,22 @@ span.attachedType {
 <span class="Keyword">proc</span> <span class="Identifier">redeliver</span><span class="Punctuation">(</span><span class="Punctuation">)</span> <span class="Operator">=</span>
   <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
     <span class="Keyword">while</span> <span class="Identifier">true</span><span class="Punctuation">:</span>
-      <span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">2000</span><span class="Operator">+</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3000</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
-      <span class="Keyword">if</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Keyword">break</span>
+      <span class="Keyword">if</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Keyword">break</span> <span class="Keyword">else</span><span class="Punctuation">:</span> <span class="Punctuation">(</span><span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">2000</span><span class="Operator">+</span><span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">3000</span><span class="Punctuation">)</span><span class="Punctuation">)</span> <span class="Punctuation">;</span> <span class="Keyword">if</span> <span class="Identifier">stop</span><span class="Punctuation">:</span> <span class="Keyword">break</span><span class="Punctuation">)</span>
       <span class="Keyword">let</span> <span class="Identifier">since</span> <span class="Operator">=</span> <span class="Identifier">getMonoTime</span><span class="Punctuation">(</span><span class="Punctuation">)</span> <span class="Operator">-</span> <span class="Identifier">initDuration</span><span class="Punctuation">(</span><span class="Identifier">milliseconds</span> <span class="Operator">=</span> <span class="DecNumber">500</span> <span class="Operator">+</span> <span class="Identifier">rand</span><span class="Punctuation">(</span><span class="DecNumber">1500</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
       <span class="Identifier">echo</span> <span class="StringLit">&quot;&quot;</span> <span class="Punctuation">;</span> <span class="Identifier">echo</span> <span class="StringLit">&quot;--&quot;</span> <span class="Punctuation">;</span> <span class="Identifier">echo</span><span class="Punctuation">(</span><span class="StringLit">&quot;Chas requests Nim-related news since timestamp @&quot;</span><span class="Punctuation">,</span> <span class="Identifier">since</span><span class="Punctuation">)</span>
       <span class="Keyword">let</span> <span class="Identifier">subscriber</span> <span class="Operator">=</span> <span class="Identifier">subscribers</span><span class="Operator">.</span><span class="Identifier">find</span><span class="Punctuation">(</span><span class="StringLit">&quot;Chas&quot;</span><span class="Punctuation">)</span>
-      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">pull</span><span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Operator">=</span><span class="Identifier">subscriber</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Operator">=</span><span class="Identifier">toIntSet</span><span class="Punctuation">(</span><span class="Punctuation">[</span><span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">find</span><span class="Punctuation">(</span><span class="StringLit">&quot;Nim&quot;</span><span class="Punctuation">)</span><span class="Punctuation">]</span><span class="Punctuation">)</span><span class="Punctuation">,</span> <span class="Identifier">aftertimestamp</span><span class="Operator">=</span><span class="Identifier">since</span><span class="Punctuation">,</span> <span class="Keyword">proc</span> <span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Punctuation">:</span> <span class="Identifier">Subscriber</span><span class="Punctuation">,</span> <span class="Identifier">expiredtopics</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Identifier">Topic</span><span class="Punctuation">]</span><span class="Punctuation">,</span>
-       <span class="Identifier">messages</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Keyword">ptr</span> <span class="Identifier">SuberMessage</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Operator">=</span> <span class="Punctuation">(</span>
+      <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">pull</span><span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Operator">=</span><span class="Identifier">subscriber</span><span class="Punctuation">,</span> <span class="Identifier">topics</span><span class="Operator">=</span><span class="Identifier">toIntSet</span><span class="Punctuation">(</span><span class="Punctuation">[</span><span class="Identifier">topics</span><span class="Operator">.</span><span class="Identifier">find</span><span class="Punctuation">(</span><span class="StringLit">&quot;Nim&quot;</span><span class="Punctuation">)</span><span class="Punctuation">]</span><span class="Punctuation">)</span><span class="Punctuation">,</span> <span class="Identifier">aftertimestamp</span><span class="Operator">=</span><span class="Identifier">since</span><span class="Punctuation">,</span> <span class="Keyword">proc</span> <span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Punctuation">:</span> <span class="Identifier">Subscriber</span><span class="Punctuation">,</span>
+       <span class="Identifier">expiredtopics</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Identifier">Topic</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="Identifier">messages</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Keyword">ptr</span> <span class="Identifier">SuberMessage</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Operator">=</span> <span class="Punctuation">(</span>
         <span class="Keyword">block</span><span class="Punctuation">:</span>
           <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span>
-            <span class="Keyword">if</span> <span class="Identifier">expiredtopics</span><span class="Operator">.</span><span class="Identifier">len</span> <span class="Operator">&gt;</span> <span class="DecNumber">0</span><span class="Punctuation">:</span> <span class="Identifier">echo</span> <span class="StringLit">&quot;Sorry, not stocking that old news. Maybe ask for a reprint?&quot;</span>
+            <span class="Keyword">if</span> <span class="Identifier">expiredtopics</span><span class="Operator">.</span><span class="Identifier">len</span> <span class="Operator">&gt;</span> <span class="DecNumber">0</span><span class="Punctuation">:</span> <span class="Identifier">echo</span> <span class="StringLit">&quot;Sorry, not stocking that old news anymore.&quot;</span>
             <span class="Keyword">else</span><span class="Punctuation">:</span> <span class="Identifier">writeMessages</span><span class="Punctuation">(</span><span class="Identifier">int</span><span class="Punctuation">(</span><span class="Identifier">subscriber</span><span class="Punctuation">)</span><span class="Punctuation">,</span> <span class="Identifier">messages</span><span class="Punctuation">)</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
 
 <span class="Keyword">proc</span> <span class="Identifier">onDeliver</span><span class="Punctuation">(</span><span class="Identifier">messages</span><span class="Punctuation">:</span> <span class="Identifier">openArray</span><span class="Punctuation">[</span><span class="Keyword">ptr</span> <span class="Identifier">SuberMessage</span><span class="Punctuation">[</span><span class="Identifier">string</span><span class="Punctuation">]</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Punctuation">,</span> <span class="Identifier">raises</span><span class="Punctuation">:</span><span class="Punctuation">[</span><span class="Punctuation">]</span><span class="Operator">.</span><span class="Punctuation">}</span> <span class="Operator">=</span>
   <span class="Punctuation">{</span><span class="Operator">.</span><span class="Identifier">gcsafe</span><span class="Operator">.</span><span class="Punctuation">}</span><span class="Punctuation">:</span> <span class="Identifier">writeMessages</span><span class="Punctuation">(</span><span class="Operator">-</span><span class="DecNumber">1</span><span class="Punctuation">,</span> <span class="Identifier">messages</span><span class="Punctuation">)</span>
 
 <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">setDeliverCallback</span><span class="Punctuation">(</span><span class="Identifier">onDeliver</span><span class="Punctuation">)</span>
-<span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..&lt;</span> <span class="DecNumber">4</span><span class="Punctuation">:</span> <span class="Punctuation">(</span><span class="Keyword">for</span> <span class="Identifier">j</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..</span> <span class="Identifier">i</span><span class="Punctuation">:</span> <span class="Keyword">discard</span> <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">subscribe</span><span class="Punctuation">(</span><span class="Identifier">i</span><span class="Operator">.</span><span class="Identifier">Subscriber</span><span class="Punctuation">,</span> <span class="Identifier">j</span><span class="Operator">.</span><span class="Identifier">Topic</span><span class="Punctuation">,</span> <span class="Identifier">true</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
+<span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..&lt;</span> <span class="DecNumber">4</span><span class="Punctuation">:</span> <span class="Punctuation">(</span><span class="Keyword">for</span> <span class="Identifier">j</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..</span> <span class="Identifier">i</span><span class="Punctuation">:</span> <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">subscribe</span><span class="Punctuation">(</span><span class="Identifier">i</span><span class="Operator">.</span><span class="Identifier">Subscriber</span><span class="Punctuation">,</span> <span class="Identifier">j</span><span class="Operator">.</span><span class="Identifier">Topic</span><span class="Punctuation">,</span> <span class="Identifier">true</span><span class="Punctuation">)</span><span class="Punctuation">)</span>
 
 <span class="Keyword">var</span> <span class="Identifier">delivererthread</span><span class="Punctuation">:</span> <span class="Identifier">Thread</span><span class="Punctuation">[</span><span class="Identifier">void</span><span class="Punctuation">]</span>
 <span class="Identifier">createThread</span><span class="Punctuation">(</span><span class="Identifier">delivererthread</span><span class="Punctuation">,</span> <span class="Identifier">deliver</span><span class="Punctuation">)</span>
@@ -1272,8 +1290,7 @@ span.attachedType {
 <span class="Identifier">createThread</span><span class="Punctuation">(</span><span class="Identifier">redelivererthread</span><span class="Punctuation">,</span> <span class="Identifier">redeliver</span><span class="Punctuation">)</span>
 <span class="Keyword">var</span> <span class="Identifier">publisherthreads</span><span class="Punctuation">:</span> <span class="Identifier">array</span><span class="Punctuation">[</span><span class="DecNumber">4</span><span class="Punctuation">,</span> <span class="Identifier">Thread</span><span class="Punctuation">[</span><span class="Identifier">int</span><span class="Punctuation">]</span><span class="Punctuation">]</span>
 <span class="Keyword">for</span> <span class="Identifier">i</span> <span class="Keyword">in</span> <span class="DecNumber">0</span> <span class="Operator">..&lt;</span> <span class="DecNumber">4</span><span class="Punctuation">:</span> <span class="Identifier">createThread</span><span class="Punctuation">(</span><span class="Identifier">publisherthreads</span><span class="Punctuation">[</span><span class="Identifier">i</span><span class="Punctuation">]</span><span class="Punctuation">,</span> <span class="Identifier">generateMessages</span><span class="Punctuation">,</span> <span class="Identifier">i</span><span class="Punctuation">)</span>
-<span class="Identifier">joinThreads</span><span class="Punctuation">(</span><span class="Identifier">publisherthreads</span><span class="Punctuation">)</span><span class="Punctuation">;</span> <span class="Identifier">joinThread</span><span class="Punctuation">(</span><span class="Identifier">delivererthread</span><span class="Punctuation">)</span><span class="Punctuation">;</span>  <span class="Identifier">joinThread</span><span class="Punctuation">(</span><span class="Identifier">redelivererthread</span><span class="Punctuation">)</span>
-<span class="Identifier">echo</span> <span class="StringLit">&quot;----&quot;</span><span class="Punctuation">;</span> <span class="Identifier">sleep</span><span class="Punctuation">(</span><span class="DecNumber">1000</span><span class="Punctuation">)</span></pre>
+<span class="Identifier">joinThreads</span> <span class="Identifier">publisherthreads</span> <span class="Punctuation">;</span> <span class="Identifier">joinThread</span> <span class="Identifier">bus</span><span class="Operator">.</span><span class="Identifier">stop</span><span class="Punctuation">(</span><span class="Punctuation">)</span> <span class="Punctuation">;</span> <span class="Identifier">joinThreads</span><span class="Punctuation">(</span><span class="Punctuation">[</span><span class="Identifier">delivererthread</span><span class="Punctuation">,</span> <span class="Identifier">redelivererthread</span><span class="Punctuation">]</span><span class="Punctuation">)</span> <span class="Punctuation">;</span> <span class="Identifier">echo</span> <span class="StringLit">&quot;&quot;</span></pre>
 <h1><a class="toc-backref" id="documentation-in-progressdotdotdot" href="#documentation-in-progressdotdotdot">Documentation in progress...</a></h1></p>
   <div class="section" id="7">
 <h1><a class="toc-backref" href="#7">Types</a></h1>
@@ -1311,7 +1328,7 @@ span.attachedType {
 </dd>
 <a id="SuberMessageKind"></a>
 <dt><pre><a href="suber.html#SuberMessageKind"><span class="Identifier">SuberMessageKind</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
-  <span class="Identifier">smNil</span><span class="Other">,</span> <span class="Identifier">smMessage</span><span class="Other">,</span> <span class="Identifier">smDeliver</span><span class="Other">,</span> <span class="Identifier">smPull</span></pre></dt>
+  <span class="Identifier">smNil</span><span class="Other">,</span> <span class="Identifier">smMessage</span><span class="Other">,</span> <span class="Identifier">smDeliver</span><span class="Other">,</span> <span class="Identifier">smPull</span><span class="Other">,</span> <span class="Identifier">smFind</span></pre></dt>
 <dd>
 
 
@@ -1331,6 +1348,11 @@ span.attachedType {
       <span class="Identifier">pulltopics</span><span class="Other">:</span> <span class="Identifier">IntSet</span>
       <span class="Identifier">aftertimestamp</span><span class="Other">:</span> <span class="Identifier">MonoTime</span>
       <span class="Identifier">pullcallback</span><span class="Other">:</span> <a href="suber.html#PullCallback"><span class="Identifier">PullCallback</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span>
+
+  <span class="Keyword">of</span> <span class="Identifier">smFind</span><span class="Other">:</span>
+      <span class="Identifier">findtimestamp</span><span class="Other">:</span> <span class="Identifier">MonoTime</span>
+      <span class="Identifier">findcallback</span><span class="Other">:</span> <span class="Keyword">proc</span> <span class="Other">(</span><span class="Identifier">query</span><span class="Other">:</span> <span class="Identifier">MonoTime</span><span class="Other">;</span> <span class="Identifier">message</span><span class="Other">:</span> <span class="Keyword">ptr</span> <a href="suber.html#SuberMessage"><span class="Identifier">SuberMessage</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">)</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma">
+          <span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span>
 
   <span class="Keyword">else</span><span class="Other">:</span>
     <span class="Keyword">nil</span>
@@ -1372,6 +1394,7 @@ span.attachedType {
   <span class="Identifier">thread</span><span class="Other">:</span> <span class="Identifier">Thread</span><span class="Other">[</span><a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">,</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">]</span>
   <span class="Identifier">peakchannelqueuelength</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">maxchannelqueuelength</span><span class="Other">:</span> <span class="Identifier">int</span>
+  <span class="Identifier">drainbeforestop</span><span class="Other">:</span> <span class="Identifier">bool</span>
 </pre></dt>
 <dd>
 
@@ -1392,6 +1415,13 @@ span.attachedType {
 </dd>
 <a id="==,Subscriber,Subscriber"></a>
 <dt><pre><span class="Keyword">proc</span> <a href="#%3D%3D%2CSubscriber%2CSubscriber"><span class="Identifier">`==`</span></a><span class="Other">(</span><span class="Identifier">x</span><span class="Other">,</span> <span class="Identifier">y</span><span class="Other">:</span> <a href="suber.html#Subscriber"><span class="Identifier">Subscriber</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">borrow</span></span><span class="Other">.}</span></span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="toMonoTime,int64"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#toMonoTime%2Cint64"><span class="Identifier">toMonoTime</span></a><span class="Other">(</span><span class="Identifier">i</span><span class="Other">:</span> <span class="Identifier">int64</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">MonoTime</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">inline</span><span class="Other">,</span> <span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
 <dd>
 
 
@@ -1458,8 +1488,16 @@ span.attachedType {
 
 
 </dd>
-<a id="stopSuber,Suber"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#stopSuber%2CSuber"><span class="Identifier">stopSuber</span></a><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">)</span></pre></dt>
+<a id="stop,Suber[TData,SuberMaxTopics]"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#stop%2CSuber%5BTData%2CSuberMaxTopics%5D"><span class="Identifier">stop</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">;</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">,</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Thread</span><span class="Other">[</span>
+    <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">,</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">]</span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="stopImmediately,Suber[TData,SuberMaxTopics]"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#stopImmediately%2CSuber%5BTData%2CSuberMaxTopics%5D"><span class="Identifier">stopImmediately</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">;</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">,</span> <span class="Identifier">SuberMaxTopics</span><span class="Other">]</span><span class="Other">)</span></pre></dt>
 <dd>
 
 
@@ -1510,7 +1548,7 @@ span.attachedType {
 </dd>
 <a id="subscribe,Suber,Subscriber,Topic"></a>
 <dt><pre><span class="Keyword">proc</span> <a href="#subscribe%2CSuber%2CSubscriber%2CTopic"><span class="Identifier">subscribe</span></a><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">subscriber</span><span class="Other">:</span> <a href="suber.html#Subscriber"><span class="Identifier">Subscriber</span></a><span class="Other">;</span> <span class="Identifier">topic</span><span class="Other">:</span> <a href="suber.html#Topic"><span class="Identifier">Topic</span></a><span class="Other">;</span>
-               <span class="Identifier">createnewtopic</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span></pre></dt>
+               <span class="Identifier">createnewtopic</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">discardable</span></span><span class="Other">.}</span></span></pre></dt>
 <dd>
 
 
@@ -1572,17 +1610,16 @@ span.attachedType {
 
 
 </dd>
-<a id="push,Suber,sinkIntSet,MonoTime,sinkTData,int"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%2CsinkIntSet%2CMonoTime%2CsinkTData%2Cint"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">IntSet</span><span class="Other">;</span> <span class="Identifier">timestamp</span><span class="Other">:</span> <span class="Identifier">MonoTime</span><span class="Other">;</span>
-                 <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span> <span class="Identifier">size</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span></pre></dt>
+<a id="push,Suber,sinkIntSet,sinkTData,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%2CsinkIntSet%2CsinkTData%2Cint"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">IntSet</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span>
+                 <span class="Identifier">size</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span></pre></dt>
 <dd>
 
 
 
 </dd>
-<a id="push,Suber,Topic,MonoTime,sinkTData,int"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%2CTopic%2CMonoTime%2CsinkTData%2Cint"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">topic</span><span class="Other">:</span> <a href="suber.html#Topic"><span class="Identifier">Topic</span></a><span class="Other">;</span> <span class="Identifier">timestamp</span><span class="Other">:</span> <span class="Identifier">MonoTime</span><span class="Other">;</span>
-                 <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span> <span class="Identifier">size</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span></pre></dt>
+<a id="push,Suber,Topic,sinkTData,int"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#push%2CSuber%2CTopic%2CsinkTData%2Cint"><span class="Identifier">push</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">topic</span><span class="Other">:</span> <a href="suber.html#Topic"><span class="Identifier">Topic</span></a><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">TData</span><span class="Other">;</span> <span class="Identifier">size</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span></pre></dt>
 <dd>
 
 
@@ -1592,6 +1629,14 @@ span.attachedType {
 <dt><pre><span class="Keyword">proc</span> <a href="#pull%2CSuber%2C%2CsinkIntSet%2CsinkMonoTime%2CPullCallback%5BTData%5D"><span class="Identifier">pull</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">subscriber</span><span class="Other">:</span> <a href="suber.html#Subscriber"><span class="Identifier">Subscriber</span></a> <span class="Operator">|</span> <span class="Identifier">int</span><span class="Other">;</span>
                  <span class="Identifier">topics</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">IntSet</span><span class="Other">;</span> <span class="Identifier">aftertimestamp</span><span class="Other">:</span> <span class="Identifier">sink</span> <span class="Identifier">MonoTime</span><span class="Other">;</span>
                  <span class="Identifier">callback</span><span class="Other">:</span> <a href="suber.html#PullCallback"><span class="Identifier">PullCallback</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">)</span></pre></dt>
+<dd>
+
+
+
+</dd>
+<a id="find,Suber,MonoTime,proc(MonoTime,ptr.SuberMessage[TData])"></a>
+<dt><pre><span class="Keyword">proc</span> <a href="#find%2CSuber%2CMonoTime%2Cproc%28MonoTime%2Cptr.SuberMessage%5BTData%5D%29"><span class="Identifier">find</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">suber</span><span class="Other">:</span> <a href="suber.html#Suber"><span class="Identifier">Suber</span></a><span class="Other">;</span> <span class="Identifier">query</span><span class="Other">:</span> <span class="Identifier">MonoTime</span><span class="Other">;</span> <span class="Identifier">callback</span><span class="Other">:</span> <span class="Keyword">proc</span> <span class="Other">(</span><span class="Identifier">query</span><span class="Other">:</span> <span class="Identifier">MonoTime</span><span class="Other">;</span>
+    <span class="Identifier">message</span><span class="Other">:</span> <span class="Keyword">ptr</span> <a href="suber.html#SuberMessage"><span class="Identifier">SuberMessage</span></a><span class="Other">[</span><span class="Identifier">TData</span><span class="Other">]</span><span class="Other">)</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span><span class="Other">)</span></pre></dt>
 <dd>
 
 
@@ -1607,7 +1652,7 @@ span.attachedType {
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-02-15 14:40:00 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-02-16 14:05:20 UTC</small>
       </div>
     </div>
   </div>

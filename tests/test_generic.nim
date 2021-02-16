@@ -1,6 +1,6 @@
 # nim c -r --gc:orc -d:release test_generic.nim
 
-import os, random, times, std/monotimes
+import random, times
 import ../src/suber
 
 const TestDuration = initDuration(seconds = 10)
@@ -96,12 +96,12 @@ proc removeSubscriber() =
  
 proc push() =
   publishedmessages.inc
-  a.push(1.Topic, getMonotime(), MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
-  b.push(1.Topic, getMonotime(), MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
+  a.push(1.Topic, MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
+  b.push(1.Topic, MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
  
 proc run() =
-  discard a.subscribe(1.Subscriber, 1.Topic, true)
-  discard b.subscribe(1.Subscriber, 1.Topic, true)
+  a.subscribe(1.Subscriber, 1.Topic, true)
+  b.subscribe(1.Subscriber, 1.Topic, true)
   randomize()
   let startTime = getMonoTime()
   echo "Single-threaded generic testing for ", TestDuration
@@ -119,7 +119,8 @@ proc run() =
   b.doDelivery()
 
 run()
-sleep(1000)
+joinThread a.stop()
+joinThread b.stop()
 doAssert(publishedmessages > 1000)
 doAssert(publishedmessages == aPushedmessages)
 doAssert(aPushedmessages == bPushedmessages)

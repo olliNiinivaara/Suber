@@ -29,13 +29,13 @@
 ##  var stop: bool
 ##  
 ##  proc generateMessages(publisher: int) =
-##    {.gcsafe.}:
-##      while not stop:
+##  {.gcsafe.}:
+##      while true:
+##        if stop: break else: (sleep(100+rand(500)) ; if stop: break)
 ##        write(stdout, $publishers[publisher] & ", "); flushFile(stdout)
 ##        var messagetopics = initIntSet()
 ##        for topicnumber in 1 .. 1 + rand(2): messagetopics.incl(rand(3))
-##        bus.push(messagetopics, getMonotime(), messagedatas[rand(3)] & " from " & publishers[publisher])
-##        sleep(100+rand(500))
+##        bus.push(messagetopics, messagedatas[rand(3)] & " from " & publishers[publisher])
 ##  
 ##  proc deliver() =
 ##    {.gcsafe.}:
@@ -62,23 +62,22 @@
 ##  proc redeliver() =
 ##    {.gcsafe.}:
 ##      while true:
-##        sleep(2000+rand(3000))
-##        if stop: break
+##        if stop: break else: (sleep(2000+rand(3000)) ; if stop: break)
 ##        let since = getMonoTime() - initDuration(milliseconds = 500 + rand(1500))
 ##        echo "" ; echo "--" ; echo("Chas requests Nim-related news since timestamp @", since)
 ##        let subscriber = subscribers.find("Chas")
-##        bus.pull(subscriber=subscriber, topics=toIntSet([topics.find("Nim")]), aftertimestamp=since, proc (subscriber: Subscriber, expiredtopics: openArray[Topic],
-##         messages: openArray[ptr SuberMessage[string]]) = (
+##        bus.pull(subscriber=subscriber, topics=toIntSet([topics.find("Nim")]), aftertimestamp=since, proc (subscriber: Subscriber,
+##         expiredtopics: openArray[Topic], messages: openArray[ptr SuberMessage[string]]) = (
 ##          block:
 ##            {.gcsafe.}:
-##              if expiredtopics.len > 0: echo "Sorry, not stocking that old news. Maybe ask for a reprint?"
+##              if expiredtopics.len > 0: echo "Sorry, not stocking that old news anymore."
 ##              else: writeMessages(int(subscriber), messages)))
 ##  
 ##  proc onDeliver(messages: openArray[ptr SuberMessage[string]]) {.gcsafe, raises:[].} =
 ##    {.gcsafe.}: writeMessages(-1, messages)
 ##  
 ##  bus.setDeliverCallback(onDeliver)
-##  for i in 0 ..< 4: (for j in 0 .. i: discard bus.subscribe(i.Subscriber, j.Topic, true))
+##  for i in 0 ..< 4: (for j in 0 .. i: bus.subscribe(i.Subscriber, j.Topic, true))
 ##  
 ##  var delivererthread: Thread[void]
 ##  createThread(delivererthread, deliver)
@@ -86,8 +85,7 @@
 ##  createThread(redelivererthread, redeliver)
 ##  var publisherthreads: array[4, Thread[int]]
 ##  for i in 0 ..< 4: createThread(publisherthreads[i], generateMessages, i)
-##  joinThreads(publisherthreads); joinThread(delivererthread);  joinThread(redelivererthread)
-##  echo "----"; sleep(1000)
+##  joinThreads publisherthreads ; joinThread bus.stop() ; joinThreads([delivererthread, redelivererthread]) ; echo ""
 ##
 ##
 ## Documentation in progress...
@@ -96,13 +94,13 @@
 
 #[
   TODO:
-    get -> find
-    findLatest    
-    better cache eviction policy, minus overwritten
+    test cache
     documentation
+    findLatest
 ]#
 
 when not compileOption("threads"): {.fatal: "Suber requires threads:on compiler option".}
+when not defined(gcDestructors): {.fatal: "Suber requires gc:arc or orc compiler option".}
   
 import intsets, tables, std/monotimes, stashtable
 export intsets, tables, monotimes
@@ -114,13 +112,13 @@ type
 
   PullCallback*[TData] = proc(subscriber: Subscriber, expiredtopics: openArray[Topic],
    messages: openArray[ptr SuberMessage[TData]]) {.gcsafe, raises:[].}
-  
+    
   SuberMessageKind* = enum
     smNil,
     smMessage,
     smDeliver,
     smPull
-    #smFind
+    smFind
 
   SuberMessage*[TData] = object
     case kind*: SuberMessageKind
@@ -134,9 +132,10 @@ type
       pulltopics: IntSet
       aftertimestamp: MonoTime
       pullcallback: PullCallback[TData]
-    #[of smFind:
+    of smFind:
       findtimestamp: MonoTime
-      findcallback: proc(message: ptr SuberMessage[TData]) {.gcsafe, raises:[].}]#
+      #findlatestwithtopic: Topic
+      findcallback: proc(query: MonoTime, message: ptr SuberMessage[TData]) {.gcsafe, raises:[].}
     else: discard
 
   DeliverCallback*[TData] = proc(messages: openArray[ptr SuberMessage[TData]]) {.gcsafe, raises:[].}
@@ -158,12 +157,15 @@ type
     thread: Thread[Suber[TData, SuberMaxTopics]]
     peakchannelqueuelength: int
     maxchannelqueuelength: int
-  
+    drainbeforestop: bool
 
 {.push checks:off.}
 
 proc `==`*(x, y: Topic): bool {.borrow.}
 proc `==`*(x, y: Subscriber): bool {.borrow.}
+
+proc toMonoTime*(i: int64): MonoTime {.inline.} =
+  result = cast[MonoTime](i)
 
 proc toIntSet*(x: openArray[Topic]): IntSet {.inline.} =
   result = initIntSet()
@@ -215,8 +217,13 @@ proc setPushCallback*[TData](suber: Suber, onPush: PushCallback[TData]) =
 proc setDeliverCallback*[TData](suber: Suber, onDeliver: DeliverCallback[TData]) =
   suber.deliverCallback = onDeliver
 
-proc stopSuber*(suber: Suber) =
-  suber.channel.send(SuberMessage(kind: smNil))
+proc stop*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]): Thread[Suber[TData, SuberMaxTopics]] =
+  suber.drainbeforestop = true
+  suber.channel.send(SuberMessage[TData](kind: smNil))
+  return suber.thread
+
+proc stopImmediately*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) =
+  suber.channel.send(SuberMessage[TData](kind: smNil))
 
 proc getChannelQueueLengths*(suber: Suber): (int, int, int) =
   (suber.channel.peek(), suber.peakchannelqueuelength, suber.maxchannelqueuelength)
@@ -242,7 +249,7 @@ proc getSubscriberCounts*[Topic](suber: Suber): seq[tuple[id: Topic; subscribers
 
 # subscribe ----------------------------------------------------
 
-proc subscribe*(suber: Suber, subscriber: Subscriber, topic: Topic; createnewtopic = false): bool =
+proc subscribe*(suber: Suber, subscriber: Subscriber, topic: Topic; createnewtopic = false): bool {.discardable.} =
   withValue(suber.subscribers, topic):
     value[].incl(int(subscriber))
     return true
@@ -304,32 +311,36 @@ template handleDelivery() =
 
 # push ----------------------------------------------------
 
-proc push*[TData](suber: Suber, topics: sink IntSet, timestamp: MonoTime, data: sink TData, size: int = 0) =
+proc push*[TData](suber: Suber, topics: sink IntSet, data: sink TData, size: int = 0) =
   if(unlikely) topics.len == 0: return
-  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topics, timestamp: timestamp, data: move data, size: size))
+  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topics, data: move data, size: size))
 
-proc push*[TData](suber: Suber, topic: Topic, timestamp: MonoTime, data: sink TData, size: int = 0) =
+proc push*[TData](suber: Suber, topic: Topic, data: sink TData, size: int = 0) =
   var topicset = initIntSet()
   topicset.incl(int(topic))
-  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topicset, timestamp: timestamp, data: move data, size: size))
+  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topicset, data: move data, size: size))
+
+template evictCache() =
+  var current = suber.head + 1
+  if(unlikely) current == suber.cache.len: current = 0
+  var evictedsize = 0
+  while evictedsize < message.size: # TODO: we could evict more, now that we are at it
+    if suber.cache[current].kind == smMessage:
+      evictedsize += suber.cache[current].size
+      `=destroy`(suber.cache[current])
+      suber.cache[current] = SuberMessage[TData](kind: smNil)
+    current.inc
+    if current == suber.cache.len: current = 0
+    if (unlikely) current == suber.head: break
+  suber.cachesize -= evictedsize
 
 template handlePush() =
-  if (unlikely) suber.cachesize + message.size > suber.CacheMaxCapacity:
-    when not defined(release):
-      echo "suber cache size ", suber.cachesize, " + message ", + message.size, " > CacheMaxCapacity ", suber.CacheMaxCapacity
-    if suber.deliverCallback != nil: handleDelivery()
-    var current = suber.head + 1
-    if (unlikely) current >= suber.cache.len: current = 0
-    var targetsize = suber.CacheMaxCapacity div 2
-    while suber.cachesize + message.size > targetsize:
-      if suber.cache[current].kind == smMessage:
-        suber.cachesize -= suber.cache[current].size
-        suber.cache[current] = SuberMessage[TData](kind: smNil)
-      current.inc
-      if current == suber.cache.len: current = 0
-      if (unlikely) current == suber.head: break
-    when not defined(release): echo "size after invalidation: ", suber.cachesize + message.size
+  message.timestamp = getMonoTime()
 
+  if(unlikely) suber.cachesize + message.size > suber.CacheMaxCapacity:
+    if suber.deliverCallback != nil: handleDelivery()
+    evictCache()
+  
   if suber.deliverCallback != nil:
     if ((suber.head == suber.CacheMaxLength - 1 and suber.lastdelivered < 1) or suber.lastdelivered == suber.head + 1): handleDelivery()
     elif suber.DeliveryMaxSize > 0:
@@ -359,7 +370,8 @@ proc pull*[TData](suber: Suber, subscriber: Subscriber | int, topics: sink IntSe
       if not value[].contains(subscriber): return
     do:
       return
-  suber.channel.send(SuberMessage[TData](kind: smPull, subscriber: Subscriber(subscriber), pulltopics: move topics, aftertimestamp: move aftertimestamp, pullcallback: callback))
+  suber.channel.send(SuberMessage[TData](kind: smPull, subscriber: Subscriber(subscriber),
+   pulltopics: move topics, aftertimestamp: move aftertimestamp, pullcallback: callback))
 
 template handlePull() =
   var expiredtopics: seq[Topic]
@@ -388,13 +400,48 @@ template handlePull() =
           current = suber.head + 1
   message.pullcallback(message.subscriber, expiredtopics, messages)
 
+# find ---------------------------------------------------
+
+proc find*[TData](suber: Suber, query: MonoTime, callback: proc(query: MonoTime, message: ptr SuberMessage[TData]) {.gcsafe, raises:[].}) =
+  suber.channel.send(SuberMessage[TData](kind: smFind, findtimestamp: query, findcallback: callback))
+
+template doBinarysearch(first, last: int, found: ptr SuberMessage) =
+  while true:
+    if last < first: break
+    let avg = (first + last) div 2
+    if suber.cache[avg].timestamp == message.findtimestamp:
+      (found = addr suber.cache[avg] ; break)
+    if suber.cache[avg].timestamp < message.findtimestamp: first = avg + 1
+    else: last = avg - 1
+
+template handleFind() =
+  var found: ptr SuberMessage[TData]
+  if(likely) suber.head > -1:
+    var oldest = suber.head + 1
+    if suber.cache.len < suber.CacheMaxLength: oldest = 0
+    else:
+      if(unlikely) oldest == suber.cache.len: oldest = 0
+      while suber.cache[oldest].kind != smMessage: # always at least 1 message in cache
+        oldest.inc
+        if(unlikely) oldest == suber.cache.len: oldest = 0
+    
+    if message.findtimestamp >= suber.cache[oldest].timestamp:
+      var first, last: int
+      if oldest <= suber.head: (first = oldest ; last = suber.head)
+      elif message.findtimestamp >= suber.cache[0].timestamp: (first = 0 ; last = suber.head)
+      else: (first = suber.head ; last = suber.CacheMaxLength - 1)
+      doBinarysearch(first, last, found)
+  message.findcallback(message.findtimestamp, found)
+
 # run ----------------------------------------------------
 
 proc run[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) {.thread, nimcall.} =
   while true:
     var message = suber.channel.recv()
     let channelqueuelength = suber.channel.peek()
-    if(likely) channelqueuelength == 0: suber.peakchannelqueuelength = 0
+    if channelqueuelength == 0:
+      suber.peakchannelqueuelength = 0
+      if(unlikely) suber.drainbeforestop: break
     else:
       if(unlikely) channelqueuelength > suber.peakchannelqueuelength:
         suber.peakchannelqueuelength = channelqueuelength
@@ -404,7 +451,9 @@ proc run[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) {.thread, n
       of smMessage: handlePush()
       of smDeliver: handleDelivery()
       of smPull: handlePull()
-      # of smFind: handleFind()
-      of smNil: (suber.channel.close(); break)
+      of smFind: handleFind()
+      of smNil:
+        suber.channel.close()
+        if suber.channel.peek() == 0 or not suber.drainbeforestop: break
 
 {.pop.}
