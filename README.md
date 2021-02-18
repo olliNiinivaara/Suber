@@ -22,7 +22,8 @@ http://htmlpreview.github.io/?https://github.com/olliNiinivaara/Suber/blob/maste
 import suber
 
 template topic(name: string): Topic = (if name == "Cats": 1.Topic else: 2.Topic)
-template subscriber(name: string): Subscriber = (if name == "Amy": 1.Subscriber else: 2.Subscriber)
+template subscriber(name: string): Subscriber =
+  (if name == "Amy": 1.Subscriber else: 2.Subscriber)
 
 let bus = newSuber[string, 2]()
 bus.addTopic(topic "Cats")
@@ -45,4 +46,5 @@ bus.push(topic "Dogs", "dog-related message")
 bus.push(toIntSet([topic "Cats", topic "Dogs"]), "multitopical message")
 
 bus.doDelivery()
-jointhreads bus.stop()```
+jointhreads bus.stop()
+```
