@@ -23,7 +23,7 @@ import suber
 
 template topic(name: string): Topic = (if name == "Cats": 1.Topic else: 2.Topic)
 template subscriber(name: string): Subscriber =
-  (if name == "Amy": 1.Subscriber else: 2.Subscriber)
+  if name == "Amy": 1.Subscriber else: 2.Subscriber
 
 let bus = newSuber[string, 2]()
 bus.addTopic(topic "Cats")
