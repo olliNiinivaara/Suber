@@ -33,12 +33,11 @@ bus.subscribe(subscriber "Bob", topic "Dogs")
 
 bus.setDeliverCallback(proc(messages: openArray[ptr SuberMessage[string]]) = (
   block:  
-    {.gcsafe.}:
-      var subscriberids: IntSet
-      for message in messages:
-        echo message.data
-        bus.getSubscribers(message, subscriberids)
-        for subscriberid in subscriberids: echo " to ", subscriberid
+    var subscriberids: IntSet
+    for message in messages:
+      echo message.data
+      {.gcsafe.}: bus.getSubscribers(message, subscriberids)
+      for subscriberid in subscriberids: echo " to ", subscriberid
 ))
 
 bus.push(topic "Cats", "cat-related message")
