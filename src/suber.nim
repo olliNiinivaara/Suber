@@ -49,7 +49,6 @@
 ##        if subscriber > -1: stdout.write("@" & $message.timestamp & " to " & subscribers[subscriber] & ", ")
 ##        else:
 ##          stdout.write("@" & $message.timestamp & " to ")      
-##          subscriberids.clear() 
 ##          bus.getSubscribers(message, subscriberids)
 ##          for subscriberid in subscriberids: stdout.write(subscribers[subscriberid] & ", ")
 ##        stdout.write("concerning ")
@@ -92,13 +91,6 @@
 ## ============================
 ##
 
-#[
-  TODO:
-    test cache
-    documentation
-    findLatest
-]#
-
 when not compileOption("threads"): {.fatal: "Suber requires threads:on compiler option".}
 when not defined(gcDestructors): {.fatal: "Suber requires gc:arc or orc compiler option".}
   
@@ -134,7 +126,7 @@ type
       pullcallback: PullCallback[TData]
     of smFind:
       findtimestamp: MonoTime
-      #findlatestwithtopic: Topic
+      #TODO: findlatestwithtopic: Topic
       findcallback: proc(query: MonoTime, message: ptr SuberMessage[TData]) {.gcsafe, raises:[].}
     else: discard
 
@@ -160,6 +152,7 @@ type
     drainbeforestop: bool
 
 {.push checks:off.}
+{.push hint[ConvFromXtoItselfNotNeeded]: off.}
 
 proc `==`*(x, y: Topic): bool {.borrow.}
 proc `==`*(x, y: Subscriber): bool {.borrow.}
@@ -218,26 +211,27 @@ proc setDeliverCallback*[TData](suber: Suber, onDeliver: DeliverCallback[TData])
   suber.deliverCallback = onDeliver
 
 proc stop*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]): Thread[Suber[TData, SuberMaxTopics]] =
+  if not suber.thread.running: return suber.thread
   suber.drainbeforestop = true
   suber.channel.send(SuberMessage[TData](kind: smNil))
   return suber.thread
 
 proc stopImmediately*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) =
-  suber.channel.send(SuberMessage[TData](kind: smNil))
+  if suber.thread.running: suber.channel.send(SuberMessage[TData](kind: smNil))
 
 proc getChannelQueueLengths*(suber: Suber): (int, int, int) =
   (suber.channel.peek(), suber.peakchannelqueuelength, suber.maxchannelqueuelength)
   
 # topics ----------------------------------------------------
 
-proc addTopic*(suber: Suber, topic: Topic) =
-  if(unlikely) topic == Topic(-1): raise newException(SuberError, "Topic -1 is reserved to denote all topics in unsubscribe")
-  if suber.subscribers.insert(topic, initIntSet())[0] == NotInStash: raise newException(SuberError, "SuberMaxTopics already in use")
+proc addTopic*(suber: Suber, topic: Topic | int) =
+  if(unlikely) int(topic) == -1: raise newException(SuberError, "Topic -1 is reserved to denote all topics in unsubscribe")
+  if suber.subscribers.insert(Topic(topic), initIntSet())[0] == NotInStash: raise newException(SuberError, "SuberMaxTopics already in use")
   
-proc removeTopic*(suber: Suber, topic: Topic) =
+proc removeTopic*(suber: Suber, topic: Topic | int) =
   suber.subscribers.del(topic)
 
-proc hasTopic*(suber: Suber, topic: Topic): bool =
+proc hasTopic*(suber: Suber, topic: Topic | int): bool =
   not (findIndex(suber.subscribers, topic) == NotInStash)
 
 proc getTopiccount*(suber: Suber): int = suber.subscribers.len
@@ -249,15 +243,15 @@ proc getSubscriberCounts*[Topic](suber: Suber): seq[tuple[id: Topic; subscribers
 
 # subscribe ----------------------------------------------------
 
-proc subscribe*(suber: Suber, subscriber: Subscriber, topic: Topic; createnewtopic = false): bool {.discardable.} =
-  withValue(suber.subscribers, topic):
+proc subscribe*(suber: Suber, subscriber: Subscriber, topic: Topic | int; createnewtopic = false): bool {.discardable.} =
+  withValue(suber.subscribers, Topic(topic)):
     value[].incl(int(subscriber))
     return true
   do:  
     if not createnewtopic: return false
     var newset = initIntSet()
     newset.incl(int(subscriber))
-    return suber.subscribers.insert(topic, newset)[1]
+    return suber.subscribers.insert(Topic(topic), newset)[1]
     
 proc unsubscribe*(suber: Suber, subscriber: Subscriber, topic: Topic = (-1).Topic) =
   if topic == (-1).Topic:
@@ -271,7 +265,7 @@ proc getSubscriptions*(suber: Suber, subscriber: Subscriber): seq[Topic] =
     suber.subscribers.withFound(topic, index):
       if value[].contains(int(subscriber)): result.add(topic)
 
-proc getSubscribers*(suber: Suber, topic: Topic): IntSet =
+proc getSubscribers*(suber: Suber, topic: Topic | int): IntSet =
   suber.subscribers.withValue(topic): return value[]
 
 proc getSubscribers*(suber: Suber): IntSet =
@@ -282,7 +276,8 @@ proc getSubscribers*(suber: Suber, topics: openArray[Topic]): IntSet =
   for topic in topics:
     suber.subscribers.withValue(topic): result.incl(value[])
 
-proc getSubscribers*(suber: Suber, message: ptr SuberMessage, toset: var IntSet) =
+proc getSubscribers*(suber: Suber, message: ptr SuberMessage, toset: var IntSet, clear = true) =
+  if clear: toset.clear()
   for topic in message.topics.items():
     suber.subscribers.withValue(Topic(topic)): toset.incl(value[])
 
@@ -315,7 +310,7 @@ proc push*[TData](suber: Suber, topics: sink IntSet, data: sink TData, size: int
   if(unlikely) topics.len == 0: return
   suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topics, data: move data, size: size))
 
-proc push*[TData](suber: Suber, topic: Topic, data: sink TData, size: int = 0) =
+proc push*[TData](suber: Suber, topic: Topic | int, data: sink TData, size: int = 0) =
   var topicset = initIntSet()
   topicset.incl(int(topic))
   suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topicset, data: move data, size: size))
@@ -360,7 +355,7 @@ template handlePush() =
     suber.cache[suber.head] = message
   
   if suber.pushCallback != nil: suber.pushCallback(addr suber.cache[suber.head])
-  
+
 # pull ----------------------------------------------------
 
 proc pull*[TData](suber: Suber, subscriber: Subscriber | int, topics: sink IntSet, aftertimestamp: sink MonoTime, callback: PullCallback[TData]) =
@@ -456,4 +451,5 @@ proc run[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) {.thread, n
         suber.channel.close()
         if suber.channel.peek() == 0 or not suber.drainbeforestop: break
 
+{.pop.}
 {.pop.}
