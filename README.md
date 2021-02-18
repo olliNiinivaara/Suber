@@ -31,7 +31,7 @@ bus.addTopic(topic "Dogs" )
 bus.subscribe(subscriber "Amy", topic "Cats")
 bus.subscribe(subscriber "Bob", topic "Dogs")
 
-bus.setDeliverCallback(proc (messages: openArray[ptr SuberMessage[string]]) = (
+bus.setDeliverCallback(proc(messages: openArray[ptr SuberMessage[string]]) = (
   block:  
     {.gcsafe.}:
       var subscriberids: IntSet
