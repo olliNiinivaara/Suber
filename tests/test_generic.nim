@@ -86,8 +86,8 @@ proc removeSubscriber() =
   let r = rand(subscribers.len - 1)
   doAssert(a.getSubscriptions(subscribers[r]).len > 0)
   doAssert(b.getSubscriptions(subscribers[r]).len > 0)
-  a.unsubscribe(subscribers[r])
-  b.unsubscribe(subscribers[r])
+  a.removeSubscriber(subscribers[r])
+  b.removeSubscriber(subscribers[r])
   doAssert(a.getSubscriptions(subscribers[r]).len == 0)
   doAssert(b.getSubscriptions(subscribers[r]).len == 0)
   for topicdata in topics.mitems:
