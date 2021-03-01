@@ -55,8 +55,7 @@ function main() {
 </script>
 
 <style>
-
-/*
+  /*
 Stylesheet for use with Docutils/rst2html.
 
 See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
@@ -961,7 +960,6 @@ span.attachedType {
   visibility: hidden;
 }
 
-
 </style>
 
 </head>
@@ -1194,7 +1192,7 @@ span.attachedType {
   <div id="tocRoot"></div>
   
   <p class="module-desc"><p>A Pub/Sub engine.</p>
-<p>Receives messages from multiple sources and delivers them as serialized stream. Sources can be in different threads. Reader threads do not block each other or writer thread and writer does not block readers. Messages can belong to multiple topics. Subscribers can subscribe to multiple topics. Topics, subscribers and subscriptions can be modified anytime. Delivery may be triggered on message push, size of undelivered messages, amount of undelivered messages and on call. Keeps a message cache so that subscribers can sync their state at will.</p>
+<p>Receives messages from multiple sources and delivers them as a serialized stream. Publisher threads do not block each other or delivery thread, and delivery does not block publishing. Messages can belong to multiple topics. Subscribers can subscribe to multiple topics. Topics, subscribers and subscriptions can be modified anytime. Delivery may be triggered on message push, size of undelivered messages, amount of undelivered messages and on call. Keeps a message cache so that subscribers can sync their state at will.</p>
 
 <h1><a class="toc-backref" id="example" href="#example">Example</a></h1><pre class="listing"><span class="Comment"># nim c -r --gc:arc --threads:on --d:release example.nim</span>
 <span class="Keyword">import</span> <span class="Identifier">suber</span><span class="Punctuation">,</span> <span class="Identifier">os</span><span class="Punctuation">,</span> <span class="Identifier">random</span><span class="Punctuation">,</span> <span class="Identifier">times</span>
@@ -1308,7 +1306,7 @@ push, pull, deliver and find -callbacks will return (pointers to) SuberMessages.
     <span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
 <dd>
 
-
+Give PullCallback -type proc as a parameter to <tt class="docutils literal"><span class="pre">pull</span></tt> proc, and it will be called back.<p><tt class="docutils literal"><span class="pre">subscriber</span></tt> identifies the puller (pass-through parameter given in pull proc)<br /><tt class="docutils literal"><span class="pre">expiredtopics</span></tt> is list of topics for which all messages are not anymore cached<br /><tt class="docutils literal"><span class="pre">messages</span></tt> includes results for topics that had all requested messages still in cache<br /></p> Note that PullCallback must be gcsafe and not raise any exceptions.
 
 </dd>
 <a id="DeliverCallback"></a>
@@ -1605,7 +1603,7 @@ Requests messages after given timestamp and belonging to certain topics.<p><tt c
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-03-01 14:15:54 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-03-01 16:08:57 UTC</small>
       </div>
     </div>
   </div>

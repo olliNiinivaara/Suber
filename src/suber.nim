@@ -3,9 +3,8 @@
 
 ## A Pub/Sub engine.
 ## 
-## Receives messages from multiple sources and delivers them as serialized stream.
-## Sources can be in different threads.
-## Reader threads do not block each other or writer thread and writer does not block readers.
+## Receives messages from multiple sources and delivers them as a serialized stream.
+## Publisher threads do not block each other or delivery thread, and delivery does not block publishing.
 ## Messages can belong to multiple topics.
 ## Subscribers can subscribe to multiple topics.
 ## Topics, subscribers and subscriptions can be modified anytime.
@@ -129,14 +128,7 @@ when not defined(nimdoc):
 
     PullCallback*[TData] = proc(subscriber: Subscriber, expiredtopics: openArray[Topic],
      messages: openArray[ptr SuberMessage[TData]]) {.gcsafe, raises:[].}
-      ## Give PullCallback -type proc as a parameter to pull proc, and it will be called back.
-      ## | `subscriber` identifies the puller (pass-through parameter given in pull proc)
-      ## | `expiredtopics` is list of topics for which all messages are not anymore cached
-      ## | `messages` includes results for topics that had all requested messages still in cache
-      ## 
-      ## Note that PullCallback must be gcsafe and not raise any exceptions.
-      ## 
-      ## See `pull` proc for an example.
+
 else:
   type
     SuberMessage*[TData] = object
@@ -148,6 +140,12 @@ else:
 
     PullCallback*[TData] = proc(subscriber: Subscriber, expiredtopics: openArray[Topic],
      messages: openArray[ptr SuberMessage[TData]]) {.gcsafe, raises:[].}
+      ## Give PullCallback -type proc as a parameter to `pull` proc, and it will be called back.
+      ## | `subscriber` identifies the puller (pass-through parameter given in pull proc)
+      ## | `expiredtopics` is list of topics for which all messages are not anymore cached
+      ## | `messages` includes results for topics that had all requested messages still in cache
+      ## 
+      ## Note that PullCallback must be gcsafe and not raise any exceptions.
 
 type
   DeliverCallback*[TData] = proc(messages: openArray[ptr SuberMessage[TData]]) {.gcsafe, raises:[].}
