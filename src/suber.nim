@@ -28,7 +28,7 @@
 ##  var stop: bool
 ##  
 ##  proc generateMessages(publisher: int) =
-##  {.gcsafe.}:
+##    {.gcsafe.}:
 ##      while true:
 ##        if stop: break else: (sleep(100+rand(500)) ; if stop: break)
 ##        write(stdout, $publishers[publisher] & ", "); flushFile(stdout)
@@ -91,20 +91,20 @@
 when not compileOption("threads"): {.fatal: "Suber requires threads:on compiler option".}
 when not defined(gcDestructors): {.fatal: "Suber requires gc:arc or orc compiler option".}
   
-import intsets, tables, std/monotimes, stashtable
-export intsets, tables, monotimes
+import intsets, std/monotimes, stashtable
+export intsets, monotimes
 
 type
-  SuberError* = object of CatchableError
   Topic* = distinct int
   Subscriber* = distinct int
     
   SuberMessageKind = enum
-    smNil,
-    smMessage,
-    smDeliver,
+    smNil
+    smMessage
+    smDeliver
     smPull
     smFind
+    # TODO?: smClear - invalidate whole cache
 
 when not defined(nimdoc):
   type
@@ -122,7 +122,7 @@ when not defined(nimdoc):
         pullcallback: PullCallback[TData]
       of smFind:
         findtimestamp: MonoTime
-        #TODO: findlatestwithtopic: Topic
+        #TODO?: findlatestwithtopic: Topic
         findcallback: proc(query: MonoTime, message: ptr SuberMessage[TData]) {.gcsafe, raises:[].}
       else: discard
 
@@ -159,8 +159,11 @@ type
     ## 
     ## Note that PushCallback must be gcsafe and not raise any exceptions.
 
+  SuberState = enum Running, Stopping, InstantStop
+
 when not defined(nimdoc):
   type Suber*[TData; SuberMaxTopics: static int] = ref object
+    state: SuberState
     CacheMaxCapacity: int
     CacheMaxLength: int 
     MaxDelivery: int
@@ -175,7 +178,6 @@ when not defined(nimdoc):
     thread: Thread[Suber[TData, SuberMaxTopics]]
     peakchannelqueuelength: int
     maxchannelqueuelength: int
-    drainbeforestop: bool
 else:
   type Suber*[TData; SuberMaxTopics: static int] = ref object
     ## The Suber service. Create one with `newSuber`.
@@ -223,8 +225,9 @@ proc initSuber[TData; SuberMaxTopics](
   suber.cache = newSeqOfCap[SuberMessage[TData]](suber.CacheMaxLength)
   suber.head = -1
   suber.lastdelivered = -1
+  suber.state = Running
   createThread(suber.thread, run, suber)
-
+  
 proc newSuber*[TData; SuberMaxTopics](onPush: PushCallback[TData], onDeliver: DeliverCallback[TData],
  cachemaxcapacity = 10000000, cachelength = 1000000, maxdelivery = -1, channelsize = 200): Suber[TData, SuberMaxTopics] =
   ## Creates new Suber service.
@@ -254,13 +257,19 @@ proc setDeliverCallback*[TData](suber: Suber, onDeliver: DeliverCallback[TData])
   suber.deliverCallback = onDeliver
 
 proc stop*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]): Thread[Suber[TData, SuberMaxTopics]] =
-  ## Stops the service, but first waits that all buffered messages get processed.
+  ## | 1: refuses to accept new messages
+  ## | 2: returns the processing thread for joining
+  ## | 3: all already accepted messages (in the channel buffer) are processed to cache (may trigger deliveries)
+  ## | 4: executes one final delivery, if undelivered messages exist in cache
+  ## | 5: processing loop stops, thread is stopped and becomes joinable
   if not suber.thread.running: return suber.thread
-  suber.drainbeforestop = true
+  suber.state = Stopping
   suber.channel.send(SuberMessage[TData](kind: smNil))
   return suber.thread
 
 proc stopImmediately*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) =
+  ## instantly stops the service
+  suber.state = InstantStop
   if suber.thread.running: suber.channel.send(SuberMessage[TData](kind: smNil))
 
 proc getChannelQueueLengths*(suber: Suber): (int, int, int) =
@@ -272,12 +281,11 @@ proc getChannelQueueLengths*(suber: Suber): (int, int, int) =
   
 # topics ----------------------------------------------------
 
-proc addTopic*(suber: Suber, topic: Topic | int) =
+proc addTopic*(suber: Suber, topic: Topic | int): bool {.discardable.} =
   ## Adds new topic.
   ## 
-  ## Will raise `SuberError`, if maximum number of topics is already added.
-  if suber.subscribers.insert(Topic(topic), initIntSet())[0] == NotInStash:
-    raise newException(SuberError, "SuberMaxTopics already in use")
+  ## Returns false if maximum number of topics is already added.
+  return not (suber.subscribers.insert(Topic(topic), initIntSet())[0] == NotInStash)
   
 proc removeTopic*(suber: Suber, topic: Topic | int) =
   suber.subscribers.del(topic)
@@ -348,22 +356,23 @@ proc isSubscriber*(suber: Suber, subscriber: Subscriber, topic: Topic): bool =
 proc doDelivery*[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) =
   ## Call this to trigger a delivery (DeliverCallback).
   ## To achieve time-based delivery, call this on regular intervals.
-  if unlikely(suber.deliverCallback == nil): raise newException(SuberError, "deliverCallback not set")
-  suber.channel.send(SuberMessage[TData](kind: smDeliver))
+  if likely(suber.deliverCallback != nil and suber.state == Running):
+    suber.channel.send(SuberMessage[TData](kind: smDeliver))
 
 template handleDelivery() =
-  var messages: seq[ptr SuberMessage[TData]]
-  if suber.lastdelivered != suber.head:
-    var current = suber.lastdelivered + 1
-    if(unlikely) current == suber.CacheMaxLength: current = 0
-    messages.add(addr suber.cache[current])
-    while true:
-      if current == suber.head: break      
-      if (unlikely) current == suber.CacheMaxLength - 1: current = -1
-      current.inc
+  if likely(suber.deliverCallback != nil):
+    var messages: seq[ptr SuberMessage[TData]]
+    if suber.lastdelivered != suber.head:
+      var current = suber.lastdelivered + 1
+      if(unlikely) current == suber.CacheMaxLength: current = 0
       messages.add(addr suber.cache[current])
-    suber.deliverCallback(messages)
-    suber.lastdelivered = current
+      while true:
+        if current == suber.head: break      
+        if (unlikely) current == suber.CacheMaxLength - 1: current = -1
+        current.inc
+        messages.add(addr suber.cache[current])
+      suber.deliverCallback(messages)
+      suber.lastdelivered = current
 
 # push ----------------------------------------------------
 
@@ -374,12 +383,12 @@ proc push*[TData](suber: Suber, topics: sink IntSet, data: sink TData, size: int
   ## | `data`: message payload. Available later as the data field of SuberMessage
   ## | `size`: Size of the data. Required only when size-based delivery is being used.
   if(unlikely) topics.len == 0: return
-  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topics, data: move data, size: size))
+  if (likely) suber.state == Running: suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topics, data: move data, size: size))
 
 proc push*[TData](suber: Suber, topic: Topic | int, data: sink TData, size: int = 0) =
   var topicset = initIntSet()
   topicset.incl(int(topic))
-  suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topicset, data: move data, size: size))
+  if (likely) suber.state == Running: suber.channel.send(SuberMessage[TData](kind: smMessage, topics: move topicset, data: move data, size: size))
 
 template evictCache() =
   var current = suber.head + 1
@@ -432,6 +441,7 @@ proc pull*[TData](suber: Suber, subscriber: Subscriber | int, topics: sink IntSe
   ## | `topics`: set of topics that are of interest
   ## | `aftertimestamp`: only messages published after this timestamp will be pulled
   ## | `callback`: the procedure that will receive the results of the pull
+  if (unlikely) suber.state != Running: return
   if(unlikely) suber.head == -1 or topics.len == 0: return
   for topic in topics:
     suber.subscribers.withValue(Topic(topic)):
@@ -515,7 +525,10 @@ proc run[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) {.thread, n
     let channelqueuelength = suber.channel.peek()
     if channelqueuelength == 0:
       suber.peakchannelqueuelength = 0
-      if(unlikely) suber.drainbeforestop: break
+      if(unlikely) suber.state == Stopping:
+        suber.channel.close()
+        handleDelivery()
+        break
     else:
       if(unlikely) channelqueuelength > suber.peakchannelqueuelength:
         suber.peakchannelqueuelength = channelqueuelength
@@ -527,8 +540,8 @@ proc run[TData; SuberMaxTopics](suber: Suber[TData, SuberMaxTopics]) {.thread, n
       of smPull: handlePull()
       of smFind: handleFind()
       of smNil:
-        suber.channel.close()
-        if suber.channel.peek() == 0 or not suber.drainbeforestop: break
-
+        if suber.state == InstantStop or suber.channel.peek() == 0:
+          suber.channel.close()
+          break
 {.pop.}
 {.pop.}

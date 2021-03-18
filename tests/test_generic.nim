@@ -68,6 +68,7 @@ proc removeTopic() =
     if a.getSubscriptions(subscribers[s]).len == 0: nomores.add(subscribers[s])
   for n in nomores: subscribers.del(subscribers.find(n))
 
+from os import sleep
 proc addSubscriber() =
   addsubscribers.inc
   if topics.len == 0: addTopic()
@@ -100,6 +101,7 @@ proc push() =
   b.push(1.Topic, MessageData(first: $rounds, second: $rounds, messagenumber: publishedmessages), ($rounds).len() * 2)
  
 proc run() =
+  addTopic()
   a.subscribe(1.Subscriber, 1.Topic, true)
   b.subscribe(1.Subscriber, 1.Topic, true)
   randomize()
