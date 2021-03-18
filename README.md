@@ -1,6 +1,6 @@
 # Suber
 
-An in-process multi-threading non-blocking topic-based loosely-coupled ring-bufferred generic publish/subscribe engine with microsecond-scale performance supporting delivery:
+An in-process multi-threading non-blocking topic-based loosely-coupled ring-buffered generic publish/subscribe engine with microsecond-scale performance supporting delivery:
 - when a message is published
 - when triggered (e.g. timer-based periodical delivery)
 - when a given number of new messages are available for delivery
