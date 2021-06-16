@@ -7,7 +7,10 @@ const DeliveryCount = 10000
 const ThreadCount = 4
 const TopicCount = 1
 
-var pushedmessages, aDeliveredmessages, bDeliveredmessages: IntSet
+var
+  pushedmessages = initIntSet()
+  aDeliveredmessages = initIntSet()
+  bDeliveredmessages = initIntSet()
 
 proc onADeliver(messages: openArray[ptr SuberMessage[int]]) =
   {.gcsafe.}:
@@ -28,7 +31,7 @@ proc run(t: int) =
     while i != DeliveryCount:
       i.inc
       if i mod 1000 == 0: a.doDelivery()
-      let data = i+(t*DeliveryCount)
+      var data = i+(t*DeliveryCount)
       a.push(1.Topic, data)
       b.push(1.Topic, data, 1)
       withLock(lock): pushedmessages.incl(data)
@@ -49,3 +52,11 @@ doAssert(aDeliveredmessages.len == bDeliveredmessages.len)
 echo "ok"
 echo "a Max channel queue length: ", a.getChannelQueueLengths[2]
 echo "b Max channel queue length: ", b.getChannelQueueLengths[2]
+sleep(1000)
+
+#--------------------------
+# gc:orc may SIGSEGV here, it is not a Suber bug!
+pushedmessages.clear()
+aDeliveredmessages.clear()
+bDeliveredmessages.clear()
+#--------------------------

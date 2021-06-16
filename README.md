@@ -2,17 +2,17 @@
 
 An in-process multi-threading non-blocking topic-based loosely-coupled ring-buffered generic publish/subscribe engine with microsecond-scale performance supporting delivery:
 - when a message is published
-- when triggered (e.g. timer-based periodical delivery)
+- when triggered (e.g., timer-based periodical delivery)
 - when a given number of new messages are available for delivery
 - when message cache size is about to exceed some threshold
 - when some undelivered messages are about to be evicted from cache
-- when client requests (e.g. pull-based delivery or specific redelivery for state syncing)
+- when client requests (e.g., pull-based delivery or specific redelivery for state syncing)
 
 ## [Documentation](http://olliniinivaara.github.io/Suber/)
 
 ## Installation
 
-`nimble install https://github.com/olliNiinivaara/Suber`
+`nimble install Suber`
 
 also note that Suber requires gc:arc/orc compiler switch
 
