@@ -36,11 +36,16 @@ proc onADeliver(messages: openArray[ptr Message]) = aDeliveredmessages += messag
 
 proc onBDeliver(messages: openArray[ptr Message]) {.gcsafe, raises:[].} = bDeliveredmessages += messages.len
 
-let a: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics](onAPush, onADeliver)
+let a: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics]()
 
-let b: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics](onBPush, onBDeliver, 1000, 20, 5, 10)
+let b: Suber[MessageData, MaxTopics] = newSuber[MessageData, MaxTopics](1000, 20, 5, 10)
 
 var rounds = 0
+
+a.setPushCallback(onAPush)
+b.setPushCallback(onBpush)
+a.setDeliverCallback(onADeliver)
+b.setDeliverCallback(onBDeliver)
 
 proc addTopic() =
   if a.getTopiccount() == MaxTopics: return
@@ -68,7 +73,6 @@ proc removeTopic() =
     if a.getSubscriptions(subscribers[s]).len == 0: nomores.add(subscribers[s])
   for n in nomores: subscribers.del(subscribers.find(n))
 
-from os import sleep
 proc addSubscriber() =
   addsubscribers.inc
   if topics.len == 0: addTopic()
@@ -121,8 +125,9 @@ proc run() =
   b.doDelivery()
 
 run()
-joinThread a.stop()
-joinThread b.stop()
+a.removeTopic(255)
+a.stop()
+b.stop()
 doAssert(publishedmessages > 1000)
 doAssert(publishedmessages == aPushedmessages)
 doAssert(aPushedmessages == bPushedmessages)

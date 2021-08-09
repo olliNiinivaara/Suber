@@ -20,10 +20,16 @@ proc onBDeliver(messages: openArray[ptr SuberMessage[int]]) =
   {.gcsafe.}:
     for m in messages: bDeliveredmessages.incl(m.data)
 
-let a = newSuber[int, TopicCount](onADeliver)
-let b = newSuber[int, TopicCount](onBDeliver, 10000, 20000, 10000, 50)
+let a = newSuber[int, TopicCount]()
+let b = newSuber[int, TopicCount](10000, 20000, 10000, 50)
 
 var lock: Lock
+lock.initLock
+
+a.setDeliverCallback(onADeliver)
+b.setDeliverCallback(onBDeliver)
+a.subscribe(1.Subscriber, 1.Topic, true)
+b.subscribe(1.Subscriber, 1.Topic, true)
 
 proc run(t: int) =
   {.gcsafe.}:
@@ -36,16 +42,15 @@ proc run(t: int) =
       b.push(1.Topic, data, 1)
       withLock(lock): pushedmessages.incl(data)
 
+
 var threads: array[ThreadCount, Thread[int]]
-a.subscribe(1.Subscriber, 1.Topic, true)
-b.subscribe(1.Subscriber, 1.Topic, true)
-lock.initLock
 echo "Multi-threaded delivery testing with ", ThreadCount * DeliveryCount, " messages"
 for i in 0 ..< ThreadCount: createThread(threads[i], run, i)
 joinThreads(threads)
 a.doDelivery()
 b.doDelivery()
-joinThreads([a.stop(), b.stop()])
+a.stop()
+b.stop()
 doAssert(pushedmessages.len == ThreadCount * DeliveryCount)
 doAssert(pushedmessages.len == aDeliveredmessages.len)
 doAssert(aDeliveredmessages.len == bDeliveredmessages.len)
@@ -55,7 +60,7 @@ echo "b Max channel queue length: ", b.getChannelQueueLengths[2]
 sleep(1000)
 
 #--------------------------
-# gc:orc may SIGSEGV here, it is not a Suber bug!
+# gc:orc may SIGSEGV here, it is not a Suber bug
 pushedmessages.clear()
 aDeliveredmessages.clear()
 bDeliveredmessages.clear()

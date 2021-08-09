@@ -45,5 +45,13 @@ bus.push(topic "Dogs", "dog-related message")
 bus.push(toIntSet([topic "Cats", topic "Dogs"]), "multitopical message")
 
 bus.doDelivery()
-jointhreads bus.stop()
+bus.stop()
 ```
+
+
+## Release notes for 2.0.0 (2021-08-09)
+- Alternative *newSuber* procs removed, use the one remaining
+- Push, Pull and Deliver callbacks must be registered via corresponding *setXXXCallback* procs
+- new *doSynced* proc for running code in sync with message sending
+- *stop* does not return a thread, joins the thread automatically instead
+- other bug fixes and minor improvements
