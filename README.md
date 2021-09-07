@@ -48,10 +48,12 @@ bus.doDelivery()
 bus.stop()
 ```
 
-
 ## Release notes for 2.0.0 (2021-08-09)
-- Alternative *newSuber* procs removed, use the one remaining
+- alternative *newSuber* procs removed, use the one remaining
 - Push, Pull and Deliver callbacks must be registered via corresponding *setXXXCallback* procs
 - new *doSynced* proc for running code in sync with message sending
 - *stop* does not return a thread, joins the thread automatically instead
 - other bug fixes and minor improvements
+
+## Release notes for 2.0.1 (2021-09-07)
+- bug fix: resurrected filling of expired topics on pull

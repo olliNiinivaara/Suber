@@ -60,7 +60,7 @@ echo "b Max channel queue length: ", b.getChannelQueueLengths[2]
 sleep(1000)
 
 #--------------------------
-# gc:orc may SIGSEGV here, it is not a Suber bug
+# gc:orc SIGSEGVs here, it is not a Suber bug (use gc:arc or don't clear your IntSets...)
 pushedmessages.clear()
 aDeliveredmessages.clear()
 bDeliveredmessages.clear()
